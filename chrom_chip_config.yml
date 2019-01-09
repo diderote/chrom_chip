@@ -1,0 +1,14 @@
+#### Vestion0.1 #####
+Name: 'Experiment_Name' #Experiment name
+Restart: Yes # Yes forces a restart of the analysis.  No continues the analysis from the last completed step. 
+LSF_Project: nimerlab # Project for -P in LSF submission
+
+#### Setup Files ####
+Sample_file: /path/to/Experimental_Sample_Setup.xlsx
+Output_directory: /path/to/output/directory #Will create a folder with experiment ame in this folder with final results.
+Scratch_folder: /path/to/scratch/folder  #staging directory.  blank will setup a tmp directory in the current working directory.
+    
+#### Genome Indicies and Additional Files ####
+Spike_index: /path/to/genome/index/folder/name
+ENCODE3_folder: /path/to/encode/chip-seq-pipeline2/
+Genome_tsv: /projects/ctsi/nimerlab/DANIEL/tools/genomes/ChIPseq_pipeline_genomes/hg38_local.tsv
