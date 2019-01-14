@@ -25,7 +25,7 @@ parser.set_defaults(notebook=True, submit=False)
 args = parser.parse_args()
 
 if args.submit:
-        cmd = f'python chrom_chip -f {args.experimental_file}'
+        cmd = f'python chrome_chip -f {args.experimental_file}'
         if not args.notebook:
             cmd += ' --no-notebook'
         else:
@@ -33,7 +33,7 @@ if args.submit:
             if args.out_notebook:
                 cmd += f' -o {args.out_notebook}'
 
-        submission_header = ['module rm python share-rpms65', 'source activate chrom_chip', cmd]
+        submission_header = ['module rm python share-rpms65', 'source activate chrome_chip', cmd]
 
         job_name = args.experimental_file.split('.')[0]
 

@@ -17,25 +17,25 @@ https://github.com/kundajelab/chipseq_pipeline
 4. Install additional dependencies:
 	- module rm python share-rpms65
 	- conda env create -f environment.yml
-	- (soon: conda install -n chrom_chip -c diderote chrom_chip)
+	- (soon: conda install -n chrome_chip -c diderote chrome_chip)
 5. OPTIONAL SETUP:
 	- To allow for contamination screen (fastq screen):
 		- Generate the relevant bowtie2 indices and add the path were indicated in options_files/fastq_screen.conf. (many premade by illumina at https://support.illumina.com/sequencing/sequencing_software/igenome.html)
-		- In the fastq_screen.conf file included with chrom_chip, unhash relvant lines before each desired DATABASE
-		- cp fastq_screen.conf `~/miniconda3/envs/chrom_chip/share/fastq-screen*/`
+		- In the fastq_screen.conf file included with chrome_chip, unhash relvant lines before each desired DATABASE
+		- cp fastq_screen.conf `~/miniconda3/envs/chrome_chip/share/fastq-screen*/`
 
 ## Usage
 
-1. Copy the Experimental_Samples.xlsx and chrom_chip_config.yml to a new folder and modify contents for the experiment. 
+1. Copy the Experimental_Samples.xlsx and chrome_chip_config.yml to a new folder and modify contents for the experiment. 
 2. To run:
-	> source activate chrom_chip
-	> chrom_chip -f chrom_chip_config.yml -s -p [your_lsf_project]
+	> source activate chrome_chip
+	> chrome_chip -f chrome_chip_config.yml -s -p [your_lsf_project]
 
 	Extra options: 
 	- Add '-t /path/to/ChIPseq.ipynb' if you running as a jupyter notebook
 	- Add '-o /path/to/output_ChIPseq.ipynb' to name your output notebook something other than your experimental file name.
 	- Add --no-notebook to run as a python script with a log file output.
-	- For all options: 'chrom_chip --help'
+	- For all options: 'chrome_chip --help'
 
 Config File Details:
 * Restart: (yes/no) Yes restarts the analysis from the beginning.  No picks up from last completed step.

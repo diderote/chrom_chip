@@ -82,7 +82,7 @@ def fastqc(exp):
 
     for sample in samples:
         command_list = ['module rm python perl',
-                        'source activate chrom_chip',
+                        'source activate chrome_chip',
                         f'fastqc {sample}'
                         ]
 
@@ -129,7 +129,7 @@ def fastq_screen(exp):
     # Submit fastqc and fastq_screen jobs for each sample
     for sample in samples:
         command_list = ['module rm python perl',
-                        'source activate chrom_chip',
+                        'source activate chrome_chip',
                         f'fastq_screen --threads 4 --aligner bowtie2 {sample}']
 
         exp.job_id.append(send_job(command_list=command_list,
@@ -194,7 +194,7 @@ def trim(exp):
                 cutadapt += f'-o {exp.data_folder}{sample}_trim_R1.fastq.gz {sample_dict["Scratch_File1"]}'
 
             command_list = ['module rm python perl',
-                            'source activate chrom_chip',
+                            'source activate chrome_chip',
                             cutadapt
                             ]
 

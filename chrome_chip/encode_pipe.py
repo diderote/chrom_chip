@@ -130,8 +130,8 @@ def encode3(exp):
 
         pythonpath = shutil.which('python')
         miniconda = [x for x in pythonpath.split('/') if 'miniconda' in x]
-        cromwell_jar = re.sub(r'{}/.*'.format(miniconda), '{}/envs/chrom_chip/share/cromwell/cromwell.jar'.format(miniconda), pythonpath)
-        jar = cromwell_jar if os.path.isfile(cromwell_jar) else '~/miniconda3/envs/chrom_chip/share/cromwell/cromwell.jar'
+        cromwell_jar = re.sub(r'{}/.*'.format(miniconda), '{}/envs/chrome_chip/share/cromwell/cromwell.jar'.format(miniconda), pythonpath)
+        jar = cromwell_jar if os.path.isfile(cromwell_jar) else '~/miniconda3/envs/chrome_chip/share/cromwell/cromwell.jar'
 
         command_list = ['module rm python share-rpms65',
                         'source activate encode-chip-seq-pipeline',
@@ -195,7 +195,7 @@ def UMI(exp):
                     umi_string += ' --paired'
 
                 command_list = ['module rm python share-rpms65',
-                                'source activate chrom_chip',
+                                'source activate chrome_chip',
                                 f'samtools index {bam}',
                                 f'samtools index {input_bam}',
                                 umi_string.format(inbam=bam, outbam=nodup_bam, sample=sample, out_dir=out_dir),
@@ -277,6 +277,7 @@ def encode_results(exp):
             glob_remove(f"{non_shard_folder.format(exp_dir, '*')}*Align.gz")
             glob_remove(f"{cromwell_folder.format(exp_dir, '*_pr*')}*.bam")
 
+        exp.sample_files[experiment] = {}
         exp.sample_files[experiment]['idr_optimal_peak'] = glob_check(f"{non_shard_folder.format(exp_dir,'reproducibility_idr')}*{sample}optimal_peak.narrowPeak.gz")
         exp.sample_files[experiment]['idr_qc'] = glob_check(f"{non_shard_folder.format(exp_dir,'reproducibility_idr')}*{sample}idr.reproducibility.qc")
         exp.sample_files[experiment]['overlap_peak'] = glob_check(f"{non_shard_folder.format(exp_dir,'reproducibility_overlap')}optimal_peak.narrowPeak.gz")
@@ -303,7 +304,7 @@ def spike(exp):
         bam = exp.sample_files[sample]['bam']
 
         spike_command = ['module rm python share-rpms65',
-                         'source activate chrom_chip',
+                         'source activate chrome_chip',
                          f'samtools view -b -f 4 {bam} | samtools sort -n - | samtools fastq - > {spike_folder}{sample}.bwa_unaligned.fastq',
                          f'bowtie2 -p 8 -x {exp.genome_indicies["spike_index"]} -U {spike_folder}{sample}.bwa_unaligned.fastq -S {spike_folder}{sample}.BDGP6.sam --very-sensitive-local -k 1 --no-unal',
                          f'samtools view -b -F 4 {spike_folder}{sample}.BDGP6.sam | samtools sort - > {spike_folder}{sample}.BDGP6.bam',

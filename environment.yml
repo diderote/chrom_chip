@@ -1,4 +1,4 @@
-name: chrom_chip
+name: chrome_chip
 channels:
   - conda-forge
   - bioconda
