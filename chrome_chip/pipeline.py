@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 
-from chrom_chip.parse import parse_config
-from chrom_chip.common import validated_run
-from chrom_chip.preprocess import stage, fastq_screen, trim, fastqc
-from chrom_chip.encode_pipe import encode3, encode_results, UMI, spike
-from chrom_chip.qc import principal_component_analysis, preseq, final_qc, finish
-from chrom_chip.overlaps import overlaps, annotation, heatmaps
+from chrome_chip.parse import parse_config
+from chrome_chip.common import validated_run
+from chrome_chip.preprocess import stage, fastq_screen, trim, fastqc
+from chrome_chip.encode_pipe import encode3, encode_results, UMI, spike
+from chrome_chip.qc import principal_component_analysis, preseq, final_qc, finish
+from chrome_chip.overlaps import overlaps, annotation, heatmaps
 # from chrom_chip.diff_binding import diff_binding
 
 

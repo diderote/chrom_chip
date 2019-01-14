@@ -11,8 +11,8 @@ from rpy2.robjects import pandas2ri
 from pybedtools import BedTool
 import gseapy
 
-from chrom_chip.plot import plot_venn2, plot_venn2_set, plot_venn3_counts, plot_venn3_set
-from chrom_chip.common import out_result, rout_write, output, val_folder, make_folder
+from chrome_chip.plot import plot_venn2, plot_venn2_set, plot_venn3_counts, plot_venn3_set
+from chrome_chip.common import out_result, rout_write, output, val_folder, make_folder
 
 
 def overlaps(exp):

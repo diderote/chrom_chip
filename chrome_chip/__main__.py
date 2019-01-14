@@ -10,8 +10,8 @@ PACKAGE_PARENT = '..'
 SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(), os.path.expanduser(__file__))))
 sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
 
-from chrom_chip.pipeline import pipeline
-from chrom_chip.common import send_job
+from chrome_chip.pipeline import pipeline
+from chrome_chip.common import send_job
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--experimental_file', '-f', required=True, help='experimental yaml file', type=str)

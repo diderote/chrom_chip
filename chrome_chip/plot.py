@@ -7,7 +7,7 @@ from matplotlib_venn import venn2, venn2_circles, venn3, venn3_circles
 import seaborn as sns
 from scipy import stats
 
-from chrom_chip.common import val_folder, out_result, output
+from chrome_chip.common import val_folder, out_result, output
 
 
 def plot_col(df, title, ylabel, out='', xy=(None, None), xticks=[''], plot_type=['violin', 'swarm'], pvalue=False, compare_tags=None, log_file=None, run_main=False):

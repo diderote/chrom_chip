@@ -8,8 +8,8 @@ import pickle
 import yaml
 from IPython.display import HTML, display
 
-from chrom_chip.common import output, send_job, read_pd, close_out, make_folder
-from chrom_chip.plot import plot_col
+from chrome_chip.common import output, send_job, read_pd, close_out, make_folder
+from chrome_chip.plot import plot_col
 
 
 def preseq(exp):

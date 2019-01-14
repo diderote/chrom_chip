@@ -7,8 +7,8 @@ from datetime import datetime
 import yaml
 import numpy as np
 
-from chrom_chip import Experiment
-from chrom_chip.common import val_folder, output, read_pd, glob_check, make_folder, version
+from chrome_chip import Experiment
+from chrome_chip.common import val_folder, output, read_pd, glob_check, make_folder, version
 
 
 def parse_config(config_file):

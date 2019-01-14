@@ -6,8 +6,8 @@ import re
 import os
 from datetime import datetime
 
-from chrom_chip.common import output, send_job, job_wait, job_pending, glob_check, make_folder, glob_remove
-from chrom_chip.preprocess import stage
+from chrome_chip.common import output, send_job, job_wait, job_pending, glob_check, make_folder, glob_remove
+from chrome_chip.preprocess import stage
 
 
 def encode3(exp):

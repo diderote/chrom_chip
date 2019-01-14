@@ -6,7 +6,7 @@ import time
 from datetime import datetime
 from shutil import copy2
 
-from chrom_chip.common import output, val_folder, send_job, job_wait, make_folder, is_fastq, txt_replace
+from chrome_chip.common import output, val_folder, send_job, job_wait, make_folder, is_fastq, txt_replace
 
 
 def stage(exp):

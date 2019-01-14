@@ -35,11 +35,14 @@ __author__ = 'Daniel L. Karl'
 __license__ = 'MIT'
 __version__ = '0.1'
 
+
 def run_main():
     return True if __name__ == '__main__' else False
 
+
 def version():
     return __version__
+
 
 def html_header(version=__version__, author=__author__, license=__license__):
     return ''.join(['<h1>ChIPseq Analysis Notebook</h1>',
