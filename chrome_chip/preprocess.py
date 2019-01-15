@@ -189,7 +189,7 @@ def trim(exp):
                 cutadapt = f'cutadapt -j 4 -a AGATCGGAAGAGC -A AGATCGGAAGAGC --cores=10 {quality} -m 18 '
                 cutadapt += f'-o {exp.data_folder}{sample}_trim_R1.fastq.gz -p {exp.data_folder}{sample}_trim_R2.fastq.gz '
                 cutadapt += f'{sample_dict["Scratch_File1"]} {sample_dict["Scratch_File2"]}'
-            elif exp.seq_type == 'single':
+            elif seq_type == 'single':
                 cutadapt = f'cutadapt -j 4 -a AGATCGGAAGAGC --cores=10 {quality} -m 18 '
                 cutadapt += f'-o {exp.data_folder}{sample}_trim_R1.fastq.gz {sample_dict["Scratch_File1"]}'
 
