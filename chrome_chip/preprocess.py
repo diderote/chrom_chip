@@ -24,8 +24,8 @@ def stage(exp):
         index = exp.sample_df['Sample_Name'] == sample
 
         paired = exp.sample_df.loc[index, 'paired'].values[0]
-        R1_list = exp.sample_df.loc[index, 'File1'].tolist()
-        R2_list = exp.sample_df.loc[index, 'File2'].tolist()
+        R1_list = ','.join(exp.sample_df.loc[index,'File1']).split(',')
+        R2_list = ','.join(exp.sample_df.loc[index,'File2']).split(',')
 
         main_file = R1_list[0]
 

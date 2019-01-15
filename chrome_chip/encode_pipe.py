@@ -6,7 +6,7 @@ import re
 import os
 from datetime import datetime
 
-from chrome_chip.common import output, send_job, job_wait, job_pending, glob_check, make_folder, glob_remove
+from chrome_chip.common import output, send_job, job_wait, job_pending, glob_check, make_folder, glob_remove, gunzip_return
 from chrome_chip.preprocess import stage
 
 
@@ -261,7 +261,7 @@ def encode_results(exp):
             exp.sample_files[sample]['xcor_png'] = glob_check(f"{cromwell_folder.format(exp_dir,'xcor')}*{sample}*.png")
             exp.sample_files[sample]['xcor_fraglen'] = glob_check(f"{cromwell_folder.format(exp_dir,'xcor')}*{sample}*.fraglen.txt")
 
-            exp.sample_files[sample]['narrowPeak'] = glob_check(f"{cromwell_folder.format(exp_dir,'macs2')}*{sample}*.bfilt.narrowPeak.gz")
+            exp.sample_files[sample]['narrowPeak'] = gunzip_return(glob_check(f"{cromwell_folder.format(exp_dir,'macs2')}*{sample}*.bfilt.narrowPeak.gz"))
             exp.sample_files[sample]['bw'] = glob_check(f"{cromwell_folder.format(exp_dir,'macs2')}*{sample}*.fc.signal.bigwig")
             exp.sample_files[sample]['frip'] = glob_check(f"{cromwell_folder.format(exp_dir,'macs2')}*{sample}*.frip.qc")
 
@@ -278,9 +278,9 @@ def encode_results(exp):
             glob_remove(f"{cromwell_folder.format(exp_dir, '*_pr*')}*.bam")
 
         exp.sample_files[experiment] = {}
-        exp.sample_files[experiment]['idr_optimal_peak'] = glob_check(f"{non_shard_folder.format(exp_dir,'reproducibility_idr')}*{sample}optimal_peak.narrowPeak.gz")
+        exp.sample_files[experiment]['idr_optimal_peak'] = gunzip_return(glob_check(f"{non_shard_folder.format(exp_dir,'reproducibility_idr')}*{sample}optimal_peak.narrowPeak.gz"))
         exp.sample_files[experiment]['idr_qc'] = glob_check(f"{non_shard_folder.format(exp_dir,'reproducibility_idr')}*{sample}idr.reproducibility.qc")
-        exp.sample_files[experiment]['overlap_peak'] = glob_check(f"{non_shard_folder.format(exp_dir,'reproducibility_overlap')}optimal_peak.narrowPeak.gz")
+        exp.sample_files[experiment]['overlap_peak'] = gunzip_return(glob_check(f"{non_shard_folder.format(exp_dir,'reproducibility_overlap')}optimal_peak.narrowPeak.gz"))
         exp.sample_files[experiment]['overlap_qc'] = glob_check(f"{non_shard_folder.format(exp_dir,'reproducibility_overlap')}overlap.reproducibility.qc")
         exp.sample_files[experiment]['qc_report'] = glob_check(f"{non_shard_folder.format(exp_dir,'qc_report')}qc.html")
 

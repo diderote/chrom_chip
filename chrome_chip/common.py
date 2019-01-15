@@ -112,6 +112,16 @@ def glob_check(path):
     return 'none' if len(file) == 0 else file[0]
 
 
+def gunzip_return(path):
+    if path == 'none':
+        return path
+    elif path.endswith('.gz'):
+        os.system(f'gunzip {path}')
+        return path[:-3]
+    else:
+        return path
+
+
 def txt_replace(string):
     return string.replace('.txt.bz2', '.fastq.gz')
 

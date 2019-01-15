@@ -24,9 +24,13 @@ def overlaps(exp):
 
     for comparison in exp.IPs['Comparison Name'].unique().tolist():
         comp_dir = make_folder(f'{out_dir}{comparison}_Overlap/')
-        overlap_list = exp.IPs[exp.Ips['Comparison Name'] == comparison]['Condition'].unique().tolist()
+        overlap_list = exp.IPs[exp.IPs['Comparison Name'] == comparison]['Condition'].unique().tolist()
 
-        bed_dict = {condition: BedTool(exp.sample_files[condition]['idr_optimal_peak']) for condition in overlap_list}
+        peakset = 'overlap_peak' if 'none' in [exp.sample_files[condition]['idr_optimal_peak'] for condition in overlap_list] else 'idr_optimal_peak'
+
+        for condition in overlap_list:
+            exp.sample_files[condition]['peaktype'] = peakset
+        bed_dict = {condition: BedTool(exp.sample_files[condition][peakset]) for condition in overlap_list}
 
         if len(overlap_list) == 2:
             exp.overlap_results[comparison] = overlap_two(bed_dict, comparison, comp_dir, genome=exp.genome)
@@ -44,7 +48,13 @@ def annotation(exp):
 
     out_dir = make_folder(f'{exp.scratch}/Annotated/')
 
-    peakfiles = {condition: pd.read_table(exp.sample_files[condition]['idr_optimal_peak']) for condition in exp.IPs['Comparison Name'].unique().tolist()}
+    condition_list = exp.IPs['Condition'].unique().tolist()
+    for condition in condition_list:
+        if 'peaktype' not in list(exp.sample_files[condition].keys()):
+            peakset = 'overlap_peak' if exp.sample_files[condition]['idr_optimal_peak'] == 'none' else 'idr_optimal_peak'
+            exp.sample_files[condition]['peaktype'] = peakset
+
+    peakfiles = {condition: pd.read_table(exp.sample_files[condition][exp.sample_files[condition]['peaktype']]) for condition in exp.IPs['Condition'].unique().tolist()}
 
     for condition, file in peakfiles:
         cond_dir = make_folder(f'{out_dir}condition/')
