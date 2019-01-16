@@ -164,11 +164,7 @@ def encode3(exp):
 
 def UMI(exp):
 
-    output('Deduplicating bam files using UMIs with UMI-tools.', exp.log_file)
-
     # exp.data_type = 'bam'
-
-    out_dir = make_folder(f'{exp.scratch}UMI/')
 
     IPs = exp.IPs
 
@@ -179,6 +175,9 @@ def UMI(exp):
             return exp
 
         else:
+            out_dir = make_folder(f'{exp.scratch}UMI/')
+            output('Deduplicating bam files using UMIs with UMI-tools.', exp.log_file)
+
             for index in IPs[IPs.Condition == experiment].index.tolist():
                 sample = IPs.loc[index, 'Sample_Name']
                 input_sample = IPs.loc[index, 'Background_Name']
@@ -296,11 +295,16 @@ def spike(exp):
     Align sequencing files to drosophila.
     '''
 
-    output('Processing samples with drosophila-spike in chromatin.', exp.log_file)
+    spike_list = [sample for sample in exp.samples if 'none' not in exp.IPs.loc[exp.IPs.Sample_Name == sample, 'Spike_Comparison'].tolist()]
+
+    if len(sample_list) == 0:
+        output('Not processing Spike-ins', exp.log_file)
+        exp.tasks_complete.append('Spike')
+        return exp
+
     # Make QC folder
     spike_folder = make_folder(f'{exp.scratch}spike/')
-
-    spike_list = [sample for sample in exp.samples if 'none' not in exp.IPs.loc[exp.IPs.Sample_Name == sample, 'Spike_Comparison'].tolist()]
+    output('Processing samples with drosophila-spike in chromatin.', exp.log_file)
 
     for sample in spike_list:
         bam = exp.sample_files[sample]['bam']
