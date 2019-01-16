@@ -81,7 +81,7 @@ def read_pd(file):
     elif (file.enswith('xls')) or (file.endswith('xlsx')):
         return pd.read_excel(file, index_col=0)
     elif file.endswith('eak.gz'):
-        reutrn pd.read_table(file, compression='gzip', header=None, index_col=None)
+        return pd.read_table(file, compression='gzip', header=None, index_col=None)
     elif file.endswith('bed'):
         return pd.read_table(file, header=None, index_col=None).iloc[:,:3]
     else:

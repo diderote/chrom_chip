@@ -279,7 +279,7 @@ def encode_results(exp):
         exp.sample_files[experiment] = {}
         exp.sample_files[experiment]['idr_optimal_peak'] = glob_check(f"{non_shard_folder.format(exp_dir,'reproducibility_idr')}*{sample}optimal_peak.narrowPeak.gz")
         exp.sample_files[experiment]['idr_qc'] = glob_check(f"{non_shard_folder.format(exp_dir,'reproducibility_idr')}*{sample}idr.reproducibility.qc")
-        exp.sample_files[experiment]['overlap_peak'] = glob_check(f"{non_shard_folder.format(exp_dir,'reproducibility_overlap')}optimal_peak.narrowPeak.gz")s
+        exp.sample_files[experiment]['overlap_peak'] = glob_check(f"{non_shard_folder.format(exp_dir,'reproducibility_overlap')}optimal_peak.narrowPeak.gz")
         exp.sample_files[experiment]['overlap_qc'] = glob_check(f"{non_shard_folder.format(exp_dir,'reproducibility_overlap')}overlap.reproducibility.qc")
         exp.sample_files[experiment]['qc_report'] = glob_check(f"{non_shard_folder.format(exp_dir,'qc_report')}qc.html")
 
