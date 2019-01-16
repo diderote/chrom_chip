@@ -330,7 +330,7 @@ def spike(exp):
     # Wait for jobs to finish
     job_wait(exp.job_id, exp.log_file)
 
-    for sample in exp.samples.values():
+    for sample in spike_list:
         exp.sample_files[sample]['drosophila'] = f'{spike_folder}{sample}.unique_drosophila.flagstat.qc'
 
     output('Spike-in alignment jobs finished.', exp.log_file)
