@@ -28,6 +28,7 @@ from datetime import datetime
 
 from IPython.display import HTML, display, Image
 import pandas as pd
+from pybedtools import BedTool
 
 from . import __name__
 
@@ -75,12 +76,16 @@ def is_fastq(file):
 
 def read_pd(file):
     glob_check(file)
-    if (file.split('.')[-1] == 'txt') or (file.split('.')[-1] == 'tab'):
+    if (file.endswith('txt')) or (file.endswith('tab')):
         return pd.read_table(file, header=0, index_col=0)
-    elif (file.split('.')[-1] == 'xls') or (file.split('.')[-1] == 'xlsx'):
+    elif (file.enswith('xls')) or (file.endswith('xlsx')):
         return pd.read_excel(file, index_col=0)
+    elif file.endswith('eak.gz'):
+        reutrn pd.read_table(file, compression='gzip', header=None, index_col=None)
+    elif file.endswith('bed'):
+        return pd.read_table(file, header=None, index_col=None).iloc[:,:3]
     else:
-        raise IOError("Cannot parse file.  Make sure it is .txt, .xls, or .xlsx")
+        raise IOError("Cannot parse file.  Make sure it is .txt, .xls, .xlsx, .bed, or *Peak.gz")
 
 
 def output(text, log_file=None, run_main=run_main()):
@@ -107,19 +112,16 @@ def image_display(file):
     display(Image(file))
 
 
+def load_bedtool(file):
+    if file.endswith('.gz'):
+        return BedTool.from_dataframe(pd.read_csv(file, compression='gzip', index_col=None, header=None, sep="\t").iloc[:,:3])
+    else:
+        return BedTool(file)
+
+
 def glob_check(path):
     file = glob.glob(path)
     return 'none' if len(file) == 0 else file[0]
-
-
-def gunzip_return(path):
-    if path == 'none':
-        return path
-    elif path.endswith('.gz'):
-        os.system(f'gunzip {path}')
-        return path[:-3]
-    else:
-        return path
 
 
 def txt_replace(string):

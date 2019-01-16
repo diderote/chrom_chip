@@ -8,11 +8,10 @@ import rpy2.robjects as ro
 import rpy2.rinterface as ri
 from rpy2.robjects.packages import importr
 from rpy2.robjects import pandas2ri
-from pybedtools import BedTool
 import gseapy
 
 from chrome_chip.plot import plot_venn2, plot_venn2_set, plot_venn3_counts, plot_venn3_set
-from chrome_chip.common import out_result, rout_write, output, val_folder, make_folder
+from chrome_chip.common import out_result, rout_write, output, val_folder, make_folder, load_bedtool, read_pd
 
 
 def overlaps(exp):
@@ -30,7 +29,7 @@ def overlaps(exp):
 
         for condition in overlap_list:
             exp.sample_files[condition]['peaktype'] = peakset
-        bed_dict = {condition: BedTool(exp.sample_files[condition][peakset]) for condition in overlap_list}
+        bed_dict = {condition: load_bedtool(exp.sample_files[condition][peakset]) for condition in overlap_list}
 
         if len(overlap_list) == 2:
             exp.overlap_results[comparison] = overlap_two(bed_dict, comparison, comp_dir, genome=exp.genome)
@@ -54,7 +53,7 @@ def annotation(exp):
             peakset = 'overlap_peak' if exp.sample_files[condition]['idr_optimal_peak'] == 'none' else 'idr_optimal_peak'
             exp.sample_files[condition]['peaktype'] = peakset
 
-    peakfiles = {condition: pd.read_table(exp.sample_files[condition][exp.sample_files[condition]['peaktype']]) for condition in exp.IPs['Condition'].unique().tolist()}
+    peakfiles = {condition: read_pd(exp.sample_files[condition][exp.sample_files[condition]['peaktype']]) for condition in exp.IPs['Condition'].unique().tolist()}
 
     for condition, file in peakfiles:
         cond_dir = make_folder(f'{out_dir}condition/')
