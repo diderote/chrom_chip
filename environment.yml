@@ -27,6 +27,8 @@ dependencies:
   - bioconductor-go.db=3.6.0=r341_0
   - bioconductor-gosemsim=2.6.2=r341hfc679d8_0
   - bioconductor-iranges=2.14.12=r341h470a237_0
+  - bioconductor-org.hs.eg.db
+  - bioconductor-org.mm.eg.db
   - bioconductor-qvalue=2.12.0=r341_0
   - bioconductor-rsamtools=1.32.3=r341hfc679d8_0
   - bioconductor-rtracklayer=1.40.6=r341h470a237_0

@@ -24,4 +24,4 @@ class Experiment:
             experiment += f'\n\t{key}: {reprlib.repr(value)}' if key not in exclude else ''
         return f'Experiment({experiment})'
 
-__all__ = ['overlaps', 'common','preprocess','parse','pipeline','encode_pipe','diff_binding']
+__all__ = ['overlaps', 'common', 'preprocess', 'parse', 'pipeline', 'encode_pipe', 'diff_binding']

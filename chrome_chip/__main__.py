@@ -4,13 +4,10 @@ import argparse
 import os
 import sys
 
-import papermill as pm
-
 PACKAGE_PARENT = '..'
 SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(), os.path.expanduser(__file__))))
 sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
 
-from chrome_chip.pipeline import pipeline
 from chrome_chip.common import send_job
 
 parser = argparse.ArgumentParser()
@@ -52,8 +49,13 @@ else:
         if (os.path.isfile(args.template_notebook) is False) or (args.template_notebook is False):
             raise IOError(f'Location of template notebook not found. Use -t option.')
         else:
+
+            import papermill as pm
+
             out_notebook = args.out_notebook if args.out_notebook else args.experimental_file.replace('yml', 'ipynb')
             pm.execute_notebook(args.template_notebook, out_notebook, parameters=dict(yaml_file=args.experimental_file), perpare_only=True)
             pm.execute_notebook(args.template_notebook, out_notebook, parameters=dict(yaml_file=args.experimental_file), log_output=True, report_mode=True)
     else:
+        from chrome_chip.pipeline import pipeline
+
         pipeline(args.experimental_file)

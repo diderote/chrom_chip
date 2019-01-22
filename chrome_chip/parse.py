@@ -46,7 +46,7 @@ def parse_config(config_file):
             # For output of R logs into job_log_folder
             os.chdir(exp.job_folder)
 
-            output(f'\n#############\nRestarting pipeline on {datetime.now():%Y-%m-%d %H:%M:%S}, from last completed step.', exp.log_file)
+            output(f'\n#############\nRestarting pipeline on {datetime.now():%Y-%m-%d %H:%M:%S}, from last completed step.', log_file=exp.log_file)
 
             return exp
         else:
@@ -58,10 +58,10 @@ def parse_config(config_file):
     # Log file
     exp.log_file = f'{exp.out_dir}{exp.name}-{exp.date}.log'
 
-    output(f'Pipeline version {version()} run on {exp.date} \n', exp.log_file)
-    output(f'Beginning ChIPseq Analysis: {datetime.now():%Y-%m-%d %H:%M:%S}\n', exp.log_file)
-    output('Reading experimental file...\n', exp.log_file)
-    output(f"Pipeline output folder: {exp.out_dir}\n", exp.log_file)
+    output(f'Pipeline version {version()} run on {exp.date} \n', log_file=exp.log_file)
+    output(f'Beginning ChIPseq Analysis: {datetime.now():%Y-%m-%d %H:%M:%S}\n', log_file=exp.log_file)
+    output('Reading experimental file...\n', log_file=exp.log_file)
+    output(f"Pipeline output folder: {exp.out_dir}\n", log_file=exp.log_file)
 
     # Setting Job Folder
     exp.job_folder = f'{val_folder(exp.scratch)}logs/'
@@ -73,7 +73,7 @@ def parse_config(config_file):
     # Make Sample Name
     exp.sample_df.replace([np.nan], 'none', inplace=True)
     exp.sample_df['Sample_Name'] = exp.sample_df.Condition + '_' + exp.sample_df.Replicate
-    output(f'Processing samples:\n{exp.sample_df}')
+    output(f'Processing samples:\n{exp.sample_df}', log_file=exp.log_file)
 
     # Paired
     exp.sample_df['paired'] = [x != 'none' for x in exp.sample_df.File2.tolist()]
@@ -84,8 +84,7 @@ def parse_config(config_file):
     exp.samples = exp.IPs.Sample_Name.tolist()
 
     # Make out directory if it doesn't exist
-    exp.out_dir = f'{val_folder(yml["Output_directory"])}{exp.name}/'
-    os.makedirs(exp.out_dir, exist_ok=True)
+    exp.out_dir = make_folder(f'{val_folder(yml["Output_directory"])}{exp.name}/')
 
     # Lab specific files
     exp.genome_indicies['spike_index'] = yml['Spike_index']
@@ -104,6 +103,6 @@ def parse_config(config_file):
     # Initialized Process Complete List
     exp._parsed = True
 
-    output(f'Experiment file parsed: {datetime.now():%Y-%m-%d %H:%M:%S}\n', exp.log_file)
+    output(f'Experiment file parsed: {datetime.now():%Y-%m-%d %H:%M:%S}\n', log_file=exp.log_file)
 
     return exp

@@ -14,7 +14,7 @@ from chrome_chip.plot import plot_col
 
 def preseq(exp):
 
-    output('\nRunning QC plots: library complexity extrapolation, signal correlation and pca plots.', exp.log_file)
+    output('\nRunning QC plots: library complexity extrapolation, signal correlation and pca plots.', log_file=exp.log_file)
 
     for sample in exp.samples:
 
@@ -77,7 +77,7 @@ def final_qc(exp):
 
     ''' add preseq '''
     try:
-        output(f'Beginning final qc: {datetime.now():%Y-%m-%d %H:%M:%S}\n', exp.log_file)
+        output(f'Beginning final qc: {datetime.now():%Y-%m-%d %H:%M:%S}\n', log_file=exp.log_file)
 
         os.system(f'multiqc {exp.scratch}*')
 
@@ -123,16 +123,16 @@ def finish(exp):
         if os.path.isdir(f'{exp.scratch}/raw_data'):
             rmtree(f'{exp.scratch}/raw_data')
 
-        output(f'\nConda environment file: {exp.job_folder}{exp.name}_environmnet.yml\nPackage versions: ', exp.log_file)
+        output(f'\nConda environment file: {exp.job_folder}{exp.name}_environmnet.yml\nPackage versions: ', log_file=exp.log_file)
 
         os.system(f'conda env export > {exp.job_folder}{exp.name}_environmnet.yml')
         with open(f'{exp.job_folder}{exp.name}_environmnet.yml', 'r') as fp:
             versions = yaml.load(fp)
         for package in versions['dependencies']:
-            output(package, exp.log_file)
+            output(package, log_file=exp.log_file)
 
-        output(f'\n{exp.name} analysis complete! \n', exp.log_file)
-        output(f'Copying all results into {exp.out_dir}: {datetime.now():%Y-%m-%d %H:%M:%S}\n', exp.log_file)
+        output(f'\n{exp.name} analysis complete! \n', log_file=exp.log_file)
+        output(f'Copying all results into {exp.out_dir}: {datetime.now():%Y-%m-%d %H:%M:%S}\n', log_file=exp.log_file)
 
         scratch_log = f'{exp.scratch}{exp.log_file.split("/")[-1]}'
         if exp.run_main:
@@ -154,8 +154,8 @@ def finish(exp):
         with open(filename, 'wb') as experiment:
             pickle.dump(exp, experiment)
 
-        output(f'Python Experiment: \n{exp}', exp.log_file)
-        output(f'Moved all files into {exp.out_dir}: {datetime.now():%Y-%m-%d %H:%M:%S}\n', exp.log_file)
+        output(f'Python Experiment: \n{exp}', log_file=exp.log_file)
+        output(f'Moved all files into {exp.out_dir}: {datetime.now():%Y-%m-%d %H:%M:%S}\n', log_file=exp.log_file)
 
         return exp
 

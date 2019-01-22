@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
 
-import os
-
 import matplotlib.pyplot as plt
 from matplotlib_venn import venn2, venn2_circles, venn3, venn3_circles
 import seaborn as sns
 from scipy import stats
 
-from chrome_chip.common import val_folder, out_result, output
+from chrome_chip.common import val_folder, out_result, output, make_folder
 
 
 def plot_col(df, title, ylabel, out='', xy=(None, None), xticks=[''], plot_type=['violin', 'swarm'], pvalue=False, compare_tags=None, log_file=None, run_main=False):
@@ -32,8 +30,7 @@ def plot_col(df, title, ylabel, out='', xy=(None, None), xticks=[''], plot_type=
     None
     '''
 
-    out = f'{val_folder(out)}/colplot/' if len(out) != 0 else 'colplot/'
-    os.makedirs(out, exist_ok=True)
+    out = make_folder(f'{val_folder(out)}plots/')
 
     plt.clf()
     sns.set(context='paper', font='Arial', font_scale=2, style='white', rc={'figure.dpi': 300, 'figure.figsize': (5, 6)})
@@ -87,7 +84,7 @@ def plot_col(df, title, ylabel, out='', xy=(None, None), xticks=[''], plot_type=
         plt.close()
 
     out_result(f"{out}{title.replace(' ', '_')}.png", f'{title} Plot')
-    output(f"{title.replace(' ', '_')}.png found in {out}", log_file)
+    output(f"{title.replace(' ', '_')}.png found in {out}", log_file=log_file)
 
 
 def deeptools(regions, signals, matrix_name, out_name, pegasus_folder, title='', bps=(1500, 1500, 4000), type='center', scaled_names=('TSS', 'TES'), make=('matrix', 'heatmap', 'heatmap_group', 'profile', 'profile_group')):
@@ -111,8 +108,7 @@ def deeptools(regions, signals, matrix_name, out_name, pegasus_folder, title='',
     string of commands for ssh_job
 
     '''
-    pegasus_folder = pegasus_folder if pegasus_folder.endswith('/') else f'{pegasus_folder}/'
-    os.makedirs(pegasus_folder, exists_ok=True)
+    pegasus_folder = make_folder(pegasus_folder)
 
     make_lower = [x.lower() for x in make]
 
@@ -161,6 +157,8 @@ def plot_venn2(Series, overlap_name, folder):
     Saves to file.
     '''
 
+    folder = make_folder(f"{val_folder(folder)}venn_plot")
+
     plt.clf()
     plt.figure(figsize=(7, 7))
 
@@ -201,7 +199,7 @@ def plot_venn2_set(dict_of_sets, overlap_name, folder):
     Inputs
     ------
     dict_of_sets: dictionary of sets to overlap
-    string_name_of_overlap: string with name of overlap
+    overlap_name: string with name of overlap
     folder: output folder
 
     Returns
@@ -209,6 +207,8 @@ def plot_venn2_set(dict_of_sets, overlap_name, folder):
     None
 
     '''
+    folder = make_folder(f"{val_folder(folder)}venn_plot")
+
     plt.clf()
     plt.figure(figsize=(7, 7))
 
@@ -247,7 +247,7 @@ def plot_venn2_set(dict_of_sets, overlap_name, folder):
     plt.savefig(f'{folder}{overlap_name.replace(" ", "_")}-overlap.png', dpi=300)
 
 
-def plot_venn3_set(dict_of_sets, string_name_of_overlap, folder):
+def plot_venn3_set(dict_of_sets, overlap_name, folder):
     '''
     Makes 3 way venn from 3 sets.
     Saves to file.
@@ -255,7 +255,7 @@ def plot_venn3_set(dict_of_sets, string_name_of_overlap, folder):
     Inputs
     ------
     dict_of_sets: dictionary of sets to overlap
-    string_name_of_overlap: string with name of overlap
+    overlap_name: string with name of overlap
     folder: output folder
 
     Returns
@@ -263,9 +263,9 @@ def plot_venn3_set(dict_of_sets, string_name_of_overlap, folder):
     None
 
     '''
-    folder = f'{folder}venn3/' if folder.endswith('/') else f'{folder}/venn3/'
-    os.makedirs(folder, exist_ok=True)
+    folder = make_folder(f"{val_folder(folder)}venn_plot")
 
+    plt.clf()
     plt.figure(figsize=(7, 7))
 
     font = {'family': 'sans-serif',
@@ -298,13 +298,14 @@ def plot_venn3_set(dict_of_sets, string_name_of_overlap, folder):
         circle.set_alpha(0.8)
         circle.set_linewidth(4)
 
-    plt.title(f"{string_name_of_overlap.replace('_', ' ')} Overlaps")
+    plt.title(f"{overlap_name.replace('_', ' ')} Overlaps")
     plt.tight_layout()
-    plt.savefig(f"{folder}{string_name_of_overlap.replace(' ', '_')}-overlap.svg")
-    plt.savefig(f"{folder}{string_name_of_overlap.replace(' ', '_')}-overlap.png", dpi=300)
+    plt.savefig(f"{folder}{overlap_name.replace(' ', '_')}-overlap.svg")
+    plt.savefig(f"{folder}{overlap_name.replace(' ', '_')}-overlap.png", dpi=300)
+    plt.close()
 
 
-def plot_venn3_counts(element_list, set_labels, string_name_of_overlap, folder):
+def plot_venn3_counts(element_list, set_labels, overlap_name, folder):
     '''
     Plot three way venn based on counts of specific overlaping numbers.
     Saves to file.
@@ -313,7 +314,7 @@ def plot_venn3_counts(element_list, set_labels, string_name_of_overlap, folder):
     ------
     element_list: tuple with counts of the the overlaps from (Abc,aBc,ABc,abC,AbC,ABC)
     set_labels: list or tuple with names of the overlaps ('A','B','C')
-    string_name_of_overlap: string with name of overlap
+    overlap_name: string with name of overlap
     folder: output folder
 
     Returns
@@ -321,9 +322,9 @@ def plot_venn3_counts(element_list, set_labels, string_name_of_overlap, folder):
     None
 
     '''
-    folder = f'{folder}venn3/' if folder.endswith('/') else f'{folder}/venn3/'
-    os.makedirs(folder, exist_ok=True)
+    folder = make_folder(f"{val_folder(folder)}venn_plot")
 
+    plt.clf()
     plt.figure(figsize=(7, 7))
 
     font = {'family': 'sans-serif',
@@ -350,7 +351,7 @@ def plot_venn3_counts(element_list, set_labels, string_name_of_overlap, folder):
         circle.set_alpha(0.8)
         circle.set_linewidth(4)
 
-    plt.title(f"{string_name_of_overlap.replace('_', ' ')} Overlaps")
+    plt.title(f"{overlap_name.replace('_', ' ')} Overlaps")
     plt.tight_layout()
-    plt.savefig(f"{folder}{string_name_of_overlap.replace(' ', '_')}-overlap.svg")
-    plt.savefig(f"{folder}{string_name_of_overlap.replace(' ', '_')}-overlap.png", dpi=300)
+    plt.savefig(f"{folder}{overlap_name.replace(' ', '_')}-overlap.svg")
+    plt.savefig(f"{folder}{overlap_name.replace(' ', '_')}-overlap.png", dpi=300)

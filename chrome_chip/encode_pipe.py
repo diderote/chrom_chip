@@ -13,11 +13,11 @@ from chrome_chip.preprocess import stage
 def encode3(exp):
 
     if 'Stage' not in exp.tasks_complete:
-        output('Files not staged.\n', exp.log_file)
+        output('Files not staged.\n', log_file=exp.log_file)
         exp = stage(exp)
 
-    output('Running alignment and peak calling using ENCODE3 standards.', exp.log_file)
-    output('ENCODE3 cromwell pipeline.', exp.log_file)
+    output('Running alignment and peak calling using ENCODE3 standards.', log_file=exp.log_file)
+    output('ENCODE3 cromwell pipeline.', log_file=exp.log_file)
 
     out_dir = make_folder(f'{exp.scratch}ENCODE3/')
 
@@ -47,7 +47,7 @@ def encode3(exp):
         try:
             file_type = end_types[exp.sample_df[exp.sample_df.Condition == experiment]['Scratch_File1'].tolist()[0][-4:]]
         except KeyError:
-            output(f"{exp.sample_df[exp.sample_df.Condition == experiment]['Scratch_File1'].tolist()[0]} not a valid file type for this pipeline.")
+            output(f"{exp.sample_df[exp.sample_df.Condition == experiment]['Scratch_File1'].tolist()[0]} not a valid file type for this pipeline.", log_file=exp.log_file)
 
         genome = IPs[IPs.Condition == experiment]['Genome'].unique().tolist()
         if len(genome) > 1:
@@ -176,7 +176,7 @@ def UMI(exp):
 
         else:
             out_dir = make_folder(f'{exp.scratch}UMI/')
-            output('Deduplicating bam files using UMIs with UMI-tools.', exp.log_file)
+            output('Deduplicating bam files using UMIs with UMI-tools.', log_file=exp.log_file)
 
             for index in IPs[IPs.Condition == experiment].index.tolist():
                 sample = IPs.loc[index, 'Sample_Name']
@@ -216,7 +216,7 @@ def UMI(exp):
 
     job_wait(exp.job_id, exp.log_file)
 
-    output('Dedplication complete.  Submitting deduplicated files for the remainder of processing.', exp.log_file)
+    output('Dedplication complete.  Submitting deduplicated files for the remainder of processing.', log_file=exp.log_file)
     exp.tasks_complete.append('UMI')
 
     return encode3(exp)
@@ -233,7 +233,7 @@ def encode_results(exp):
         exp_dir = f'{exp.scratch}ENCODE3/{experiment}/'
         cromwell_folder = '{}cromwell-executions/chip/*/call-{}/shard-*/execution/'
         non_shard_folder = '{}cromwell-executions/chip/*/call-{}/execution/'
-        output(f'Extracting results from {experiment}', exp.log_file)
+        output(f'Extracting results from {experiment}', log_file=exp.log_file)
 
         samples = exp.IPs[exp.IPs.Condition == experiment].Sample_Name.tolist()
 
@@ -277,8 +277,8 @@ def encode_results(exp):
             glob_remove(f"{cromwell_folder.format(exp_dir, '*_pr*')}*.bam")
 
         exp.sample_files[experiment] = {}
-        exp.sample_files[experiment]['idr_optimal_peak'] = glob_check(f"{non_shard_folder.format(exp_dir,'reproducibility_idr')}*{sample}optimal_peak.narrowPeak.gz")
-        exp.sample_files[experiment]['idr_qc'] = glob_check(f"{non_shard_folder.format(exp_dir,'reproducibility_idr')}*{sample}idr.reproducibility.qc")
+        exp.sample_files[experiment]['idr_optimal_peak'] = glob_check(f"{non_shard_folder.format(exp_dir,'reproducibility_idr')}optimal_peak.narrowPeak.gz")
+        exp.sample_files[experiment]['idr_qc'] = glob_check(f"{non_shard_folder.format(exp_dir,'reproducibility_idr')}idr.reproducibility.qc")
         exp.sample_files[experiment]['overlap_peak'] = glob_check(f"{non_shard_folder.format(exp_dir,'reproducibility_overlap')}optimal_peak.narrowPeak.gz")
         exp.sample_files[experiment]['overlap_qc'] = glob_check(f"{non_shard_folder.format(exp_dir,'reproducibility_overlap')}overlap.reproducibility.qc")
         exp.sample_files[experiment]['qc_report'] = glob_check(f"{non_shard_folder.format(exp_dir,'qc_report')}qc.html")
@@ -295,16 +295,16 @@ def spike(exp):
     Align sequencing files to drosophila.
     '''
 
-    spike_list = [sample for sample in exp.samples if 'none' not in exp.IPs.loc[exp.IPs.Sample_Name == sample, 'Spike_Comparison'].tolist()]
+    spike_list = [sample for sample in exp.samples if 'none' not in exp.IPs.loc[exp.IPs.Sample_Name == sample, 'Spike Comparison'].tolist()]
 
-    if len(sample_list) == 0:
-        output('Not processing Spike-ins', exp.log_file)
+    if len(spike_list) == 0:
+        output('Not processing Spike-ins', log_file=exp.log_file)
         exp.tasks_complete.append('Spike')
         return exp
 
     # Make QC folder
     spike_folder = make_folder(f'{exp.scratch}spike/')
-    output('Processing samples with drosophila-spike in chromatin.', exp.log_file)
+    output('Processing samples with drosophila-spike in chromatin.', log_file=exp.log_file)
 
     for sample in spike_list:
         bam = exp.sample_files[sample]['bam']
@@ -337,11 +337,11 @@ def spike(exp):
     for sample in spike_list:
         exp.sample_files[sample]['drosophila'] = f'{spike_folder}{sample}.unique_drosophila.flagstat.qc'
 
-    output('Spike-in alignment jobs finished.', exp.log_file)
+    output('Spike-in alignment jobs finished.', log_file=exp.log_file)
 
     # Generate one dataframe for all spike_counts
 
-    output(f"Spike-in processing complete: {datetime.now():%Y-%m-%d %H:%M:%S}\n", exp.log_file)
+    output(f"Spike-in processing complete: {datetime.now():%Y-%m-%d %H:%M:%S}\n", log_file=exp.log_file)
 
     exp.tasks_complete.append('Spike')
     return exp

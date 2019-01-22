@@ -27,18 +27,30 @@ def overlaps(exp):
 
         peakset = 'overlap_peak' if 'none' in [exp.sample_files[condition]['idr_optimal_peak'] for condition in overlap_list] else 'idr_optimal_peak'
 
+        if (peakset == 'overlap_peak') and ('none' in [exp.sample_files[condition]['overlap_peak'] for condition in overlap_list]):
+            output(f'ENCODE processing did not finish for at least one of the samples in the comparison {comparison}.  Skipping overlap...', log_file=exp.log_file)
+            continue
+
         for condition in overlap_list:
             exp.sample_files[condition]['peaktype'] = peakset
+
         bed_dict = {condition: load_bedtool(exp.sample_files[condition][peakset]) for condition in overlap_list}
 
+        genome_list = exp.IPs.loc[exp.IPs['Comparison Name'] == comparison, 'Genome'].unique().tolist()
+        if len(genome_list) > 1:
+            output(f'Cannot overlap peaks from different genomes for {condition}.', log_file=exp.log_file)
+            continue
+        else:
+            genome = genome_list[0]
+
         if len(overlap_list) == 2:
-            exp.overlap_results[comparison] = overlap_two(bed_dict, comparison, comp_dir, genome=exp.genome)
+            exp.overlap_results[comparison] = overlap_two(bed_dict, comparison, comp_dir, exp.log_file, genome=genome)
         elif len(overlap_list) == 3:
-            exp.overlap_results[comparison] = overlap_three(bed_dict, comparison, comp_dir, genome=exp.genome)
+            exp.overlap_results[comparison] = overlap_three(bed_dict, comparison, comp_dir, exp.log_file, genome=genome)
         else:
             raise Exception('Can only overlap two or three conditions.')
 
-    output(f'Overlap analysis complete: {datetime.now():%Y-%m-%d %H:%M:%S}\n', exp.log_file)
+    output(f'Overlap analysis complete: {datetime.now():%Y-%m-%d %H:%M:%S}\n', log_file=exp.log_file)
 
     return exp
 
@@ -56,8 +68,10 @@ def annotation(exp):
     peakfiles = {condition: read_pd(exp.sample_files[condition][exp.sample_files[condition]['peaktype']]) for condition in exp.IPs['Condition'].unique().tolist()}
 
     for condition, file in peakfiles:
+        genome = exp.IPs.loc[exp.IPs.Condition == condition, 'Genome'].unique().tolist()[0]
+
         cond_dir = make_folder(f'{out_dir}condition/')
-        anno_results = annotate_peaks(file, cond_dir, exp.genome, db='UCSC', check=False, log_file=exp.log_file)
+        anno_results = annotate_peaks(file, cond_dir, genome, db='UCSC', check=False, log_file=exp.log_file)
         anno_list = anno_results.SYMBOL.unique().tolist()
         enrichr(anno_list, f'enrichr_{condition}', cond_dir, scan=None, max_terms=10, figsize=(12, 6))
 
@@ -89,6 +103,7 @@ def annotate_peaks(dict_of_dfs, folder, genome, log_file, db='UCSC', check=False
     ri.set_writeconsole_warnerror(rout_write)
 
     chipseeker = importr('ChIPseeker')
+    genomicFeatures = importr('GenomicFeatures')
     makeGR = ro.r("makeGRangesFromDataFrame")
 
     check_df = {key: os.path.isfile(f'{folder}{key.replace(" ", "_")}_annotated.txt') for key in dict_of_dfs.keys()}
@@ -118,7 +133,7 @@ def annotate_peaks(dict_of_dfs, folder, genome, log_file, db='UCSC', check=False
 
     return_dict = {}
 
-    output('Annotating Peaks...', log_file)
+    output('Annotating Peaks...', log_file=log_file)
     for key, df in dict_of_dfs.items():
         if check & check_df[key]:
             return_dict[f'{key}_annotated'] = pd.from_csv(f'{folder}{key.replace(" ", "_")}_annotated.txt', index_col=0, header=0, sep="\t")
@@ -133,7 +148,7 @@ def annotate_peaks(dict_of_dfs, folder, genome, log_file, db='UCSC', check=False
     return return_dict
 
 
-def overlap_two(bed_dict, overlap_name, out_folder, genome=None):
+def overlap_two(bed_dict, overlap_name, out_folder, log_file, genome=None):
     '''
     Takes a dictionary of two bed-like format files.
     Merges all overlapping peaks for each bed into a master file.
@@ -155,8 +170,9 @@ def overlap_two(bed_dict, overlap_name, out_folder, genome=None):
 
     names = list(bed_dict.keys())
 
-    os.makedirs(out_folder, exist_ok=True)
-    print(f'Output files for {overlap_name} are found in {out_folder}')
+    out_folder = make_folder(out_folder)
+
+    output(f'Output files for {overlap_name} are found in {out_folder}', log_file=log_file)
 
     masterfile = bed_dict[names[0]].cat(bed_dict[names[1]]).sort().merge()
     sorted_dict = {key: bed.sort().merge() for key, bed in bed_dict.items()}
@@ -177,14 +193,14 @@ def overlap_two(bed_dict, overlap_name, out_folder, genome=None):
 
     # Venn
     plot_venn2(overlap_numbers, overlap_name.replace('_', ' '), out_folder)
-    out_result(f'{out_folder}{overlap_name.replace(" ","_")}-overlap.png', f"{overlap_name.replace('_',' ')} Venn Overlap")
+    out_result(f'{out_folder}venn_plot/{overlap_name.replace(" ","_")}-overlap.png', f"{overlap_name.replace('_',' ')} Peak Venn Overlap")
 
     if bool(genome):
         # output(f'Annotating overlaping peaks for {overlap_name.replace("_"," ")}...', log_file)
         # Annotate with ChIPseeker
         unikey = '{}_unique'
         unianno = '{}_unique_annotated'
-        return_dict = annotate_peaks({unikey.format(key): bed.to_dataframe() for key, bed in overlap_dict.items()}, out_folder, genome=genome)
+        return_dict = annotate_peaks({unikey.format(key): bed.to_dataframe() for key, bed in overlap_dict.items()}, out_folder, genome=genome, log_file=log_file)
 
         Set1_unique = set(return_dict[unianno.format(f'{names[0]}_unique_peak')].SYMBOL.unique().tolist())
         Set2_unique = set(return_dict[unianno.format(f'{names[1]}_unique_peak')].SYMBOL.unique().tolist())
@@ -194,8 +210,9 @@ def overlap_two(bed_dict, overlap_name, out_folder, genome=None):
                       names[1]: (Set2_unique | Overlap_Set)
                       }
 
-        plot_venn2_set(venn2_dict, f'{overlap_name.replace("_"," ")} Annotated Gene', out_folder)
-        out_result(f'{out_folder}{overlap_name.replace(" ","_")}-overlap.png', f"{overlap_name.replace('_',' ')} Venn Annotated Gene Overlap")
+        plot_name = f'{overlap_name.replace("_"," ")} Annotated Gene'
+        plot_venn2_set(venn2_dict, plot_name, out_folder)
+        out_result(f'{out_folder}venn_plot/{plot_name.replace(" ","_")}-overlap.png', f"{overlap_name.replace('_',' ')} Venn Annotated Gene Overlap")
 
         gene_overlaps = {}
         gene_overlaps[f'{names[0]}_unique_genes'] = Set1_unique - (Set2_unique | Overlap_Set)
@@ -205,16 +222,16 @@ def overlap_two(bed_dict, overlap_name, out_folder, genome=None):
         for key, item in gene_overlaps.items():
             return_dict[key] = item
 
-        for key, df in overlap_dict.items():
-            return_dict[key] = df
+        for key, bed in overlap_dict.items():
+            return_dict[key] = bed.to_dataframe()
 
     else:
-        return_dict = overlap_dict
+        return_dict = {key: bed.to_dataframe() for key, bed in overlap_dict.items()}
 
     return return_dict
 
 
-def overlap_three(bed_dict, genome=None):
+def overlap_three(bed_dict, overlap_name, out_folder, log_file, genome=None):
     '''
     Takes a dictionary of three bed-like format files.
     Merges all overlapping peaks for each bed into a master file.
@@ -237,13 +254,15 @@ def overlap_three(bed_dict, genome=None):
 
     names = list(bed_dict.keys())
 
-    Folder = f'{os.getcwd()}/'
-    subfolder = f"{names[0].replace(' ', '_')}-{names[1].replace(' ', '_')}-{names[2].replace(' ', '_')}-overlap/"
+    out = make_folder(f"{val_folder(out_folder)}{overlap_name}/")
 
-    out = f'{Folder}{subfolder}'
-    os.makedirs(out, exist_ok=True)
-    print(f'Output files are found in {out}')
-    print(f'A: {names[0]}, B: {names[1]}, C: {names[2]}')
+    output(f'Output files are found in {out}', log_file=log_file)
+    output(f'A: {names[0]}, B: {names[1]}, C: {names[2]}', log_file=log_file)
+    with open(f'{out}README.txt', 'w') as file:
+        file.write('All peaks are unique, meaning that each peak is in only one group.\n')
+        file.write('Capital letter means this sample peak is included in the overlap.\n')
+        file.write('Lowercase letter means the sample is excluded in the overlap.\n\n')
+        file.write(f'A: {names[0]}\nB: {names[1]}\nC: {names[2]}')
 
     master = bed_dict[names[0]].cat(bed_dict[names[1]]).cat(bed_dict[names[2]]).sort().merge()
 
@@ -263,27 +282,32 @@ def overlap_three(bed_dict, genome=None):
     labTup = tuple(key for key in sorted_dict.keys())
     lenTup = tuple(len(bed) for bed in sorted_dict.values())
 
-    print(f'{labTup}\n{lenTup}')
+    output(f'{labTup}\n{lenTup}', log_file=log_file)
 
     plot_venn3_counts(lenTup[4:], names, '', out)
+    out_result(f'{out}venn_plot/{overlap_name}-overlap.png', f"{overlap_name} Peak Venn Overlap")
 
     for key, bed in sorted_dict.items():
-        bed.to_dataframe().to_csv(f"{out}{key.replace(' ', '_')}-peaks-from-mergedPeaks.bed",
-                                  header=None, index=None, sep="\t")
+        if len(bed) > 0:
+            bed.to_dataframe().to_csv(f"{out}{key.replace(' ', '_')}-peaks-from-mergedPeaks.bed",
+                                      header=None, index=None, sep="\t")
 
     if bool(genome):
-        print('Annotating ovelapped peaks...')
+        output('Annotating ovelapped peaks...', log_file=log_file)
         unikey = '{}_unique'
         unianno = '{}_unique_annotated'
-        return_dict = annotate_peaks({unikey.format(key): bed.to_dataframe() for key, bed in sorted_dict.items()}, out, genome=genome)
+        return_dict = annotate_peaks({unikey.format(key): bed.to_dataframe() for key, bed in sorted_dict.items()}, out, genome=genome, log_file=log_file)
 
         Set1 = set(return_dict[unianno.format('A')].SYMBOL.unique().tolist())
         Set2 = set(return_dict[unianno.format('B')].SYMBOL.unique().tolist())
         Set3 = set(return_dict[unianno.format('C')].SYMBOL.unique().tolist())
 
-        plot_venn3_set({names[0]: Set1, names[1]: Set2, names[2]: Set3}, f'{names[0]}_{names[1]}_{names[2]}', out)
+        plot_venn3_set({names[0]: Set1, names[1]: Set2, names[2]: Set3}, f'{overlap_name}_annotated_genes', out)
+        out_result(f'{out}venn_plot/{overlap_name}_annotated_genes-overlap.png', f"{overlap_name.replace('_',' ')} Gene Venn Overlap")
 
-    return sorted_dict if genome is None else {**sorted_dict, **return_dict}
+    return_sorted_dict = {key: bed.to_dataframe() for key, bed in sorted_dict.items()}
+
+    return return_sorted_dict if genome is None else {**return_sorted_dict, **return_dict}
 
 
 def enrichr(gene_list, description, out_dir, scan=None, max_terms=10, figsize=(12, 6)):
@@ -308,7 +332,7 @@ def enrichr(gene_list, description, out_dir, scan=None, max_terms=10, figsize=(1
 
     '''
 
-    out_dir = val_folder(out_dir)
+    out_dir = make_folder(out_dir)
 
     testscan = {'KEGG': 'KEGG_2016',
                 'GO_biological_process': 'GO_Biological_Process_2017b',
