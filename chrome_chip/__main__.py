@@ -42,7 +42,9 @@ if args.submit:
                  log_file=f'bsub_{job_name}.log',
                  project=args.project,
                  cores=1,
-                 submit=True)
+                 submit=True,
+                 run_main=False
+                 )
 
 else:
     if args.notebook:

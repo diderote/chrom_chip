@@ -10,7 +10,7 @@ from chrome_chip.overlaps import overlaps, annotation, heatmaps
 
 
 def pipeline(experimental_file):
-        exp = parse_config(experimental_file)
+        exp = parse_config(experimental_file, run_main=True)
         exp = validated_run('Stage', stage, exp)
         exp = validated_run('Fastq_screen', fastq_screen, exp)
         exp = validated_run('Trim', trim, exp)

@@ -14,7 +14,7 @@ from chrome_chip.plot import plot_col
 
 def preseq(exp):
 
-    output('\nRunning QC plots: library complexity extrapolation, signal correlation and pca plots.', log_file=exp.log_file)
+    output('\nRunning QC plots: library complexity extrapolation, signal correlation and pca plots.', log_file=exp.log_file, run_main=exp.run_main)
 
     for sample in exp.samples:
 
@@ -32,7 +32,8 @@ def preseq(exp):
                                    mem=5000,
                                    log_file=exp.log_file,
                                    project=exp.project,
-                                   cores=1
+                                   cores=1,
+                                   run_main=exp.run_main
                                    ))
 
     exp.tasks_complete.append('preseq')
@@ -65,7 +66,8 @@ def principal_component_analysis(exp):
                                mem=4000,
                                log_file=exp.log_file,
                                project=exp.project,
-                               cores=5
+                               cores=5,
+                               run_main=exp.run_main
                                ))
 
     exp.tasks_complete.append('PCA')
@@ -77,7 +79,7 @@ def final_qc(exp):
 
     ''' add preseq '''
     try:
-        output(f'Beginning final qc: {datetime.now():%Y-%m-%d %H:%M:%S}\n', log_file=exp.log_file)
+        output(f'Beginning final qc: {datetime.now():%Y-%m-%d %H:%M:%S}\n', log_file=exp.log_file, run_main=exp.run_main)
 
         os.system(f'multiqc {exp.scratch}*')
 
@@ -94,13 +96,15 @@ def final_qc(exp):
             plot_col(df=gen_stats.loc[samples, 'FastQC_mqc-generalstats-fastqc-total_sequences'] / 1e6,
                      title='Total Sequencer Reads per Sample',
                      ylabel='Reads (Millions)',
-                     log_file=exp.log_file
+                     log_file=exp.log_file,
+                     run_main=exp.run_main
                      )
 
             plot_col(df=gen_stats.loc[samples, 'FastQC_mqc-generalstats-fastqc-percent_gc'],
                      title='Percent GC Content per Sample',
                      ylabel='Percentage of Reads with GC Content',
-                     log_file=exp.log_file
+                     log_file=exp.log_file,
+                     run_main=exp.run_main
                      )
 
             copytree('colplot/', f'{exp.scratch}QC/colplot/')
@@ -123,16 +127,16 @@ def finish(exp):
         if os.path.isdir(f'{exp.scratch}/raw_data'):
             rmtree(f'{exp.scratch}/raw_data')
 
-        output(f'\nConda environment file: {exp.job_folder}{exp.name}_environmnet.yml\nPackage versions: ', log_file=exp.log_file)
+        output(f'\nConda environment file: {exp.job_folder}{exp.name}_environmnet.yml\nPackage versions: ', log_file=exp.log_file, run_main=exp.run_main)
 
         os.system(f'conda env export > {exp.job_folder}{exp.name}_environmnet.yml')
         with open(f'{exp.job_folder}{exp.name}_environmnet.yml', 'r') as fp:
             versions = yaml.load(fp)
         for package in versions['dependencies']:
-            output(package, log_file=exp.log_file)
+            output(package, log_file=exp.log_file, run_main=exp.run_main)
 
-        output(f'\n{exp.name} analysis complete! \n', log_file=exp.log_file)
-        output(f'Copying all results into {exp.out_dir}: {datetime.now():%Y-%m-%d %H:%M:%S}\n', log_file=exp.log_file)
+        output(f'\n{exp.name} analysis complete! \n', log_file=exp.log_file, run_main=exp.run_main)
+        output(f'Copying all results into {exp.out_dir}: {datetime.now():%Y-%m-%d %H:%M:%S}\n', log_file=exp.log_file, run_main=exp.run_main)
 
         scratch_log = f'{exp.scratch}{exp.log_file.split("/")[-1]}'
         if exp.run_main:
@@ -154,8 +158,8 @@ def finish(exp):
         with open(filename, 'wb') as experiment:
             pickle.dump(exp, experiment)
 
-        output(f'Python Experiment: \n{exp}', log_file=exp.log_file)
-        output(f'Moved all files into {exp.out_dir}: {datetime.now():%Y-%m-%d %H:%M:%S}\n', log_file=exp.log_file)
+        output(f'Python Experiment: \n{exp}', log_file=exp.log_file, run_main=exp.run_main)
+        output(f'Moved all files into {exp.out_dir}: {datetime.now():%Y-%m-%d %H:%M:%S}\n', log_file=exp.log_file, run_main=exp.run_main)
 
         return exp
 

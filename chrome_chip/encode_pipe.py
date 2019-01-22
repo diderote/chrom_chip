@@ -16,8 +16,8 @@ def encode3(exp):
         output('Files not staged.\n', log_file=exp.log_file)
         exp = stage(exp)
 
-    output('Running alignment and peak calling using ENCODE3 standards.', log_file=exp.log_file)
-    output('ENCODE3 cromwell pipeline.', log_file=exp.log_file)
+    output('Running alignment and peak calling using ENCODE3 standards.', log_file=exp.log_file, run_main=exp.run_main)
+    output('ENCODE3 cromwell pipeline.', log_file=exp.log_file, run_main=exp.run_main)
 
     out_dir = make_folder(f'{exp.scratch}ENCODE3/')
 
@@ -47,7 +47,7 @@ def encode3(exp):
         try:
             file_type = end_types[exp.sample_df[exp.sample_df.Condition == experiment]['Scratch_File1'].tolist()[0][-4:]]
         except KeyError:
-            output(f"{exp.sample_df[exp.sample_df.Condition == experiment]['Scratch_File1'].tolist()[0]} not a valid file type for this pipeline.", log_file=exp.log_file)
+            output(f"{exp.sample_df[exp.sample_df.Condition == experiment]['Scratch_File1'].tolist()[0]} not a valid file type for this pipeline.", log_file=exp.log_file, run_main=exp.run_main)
 
         genome = IPs[IPs.Condition == experiment]['Genome'].unique().tolist()
         if len(genome) > 1:
@@ -146,7 +146,8 @@ def encode3(exp):
                             mem=35000,
                             log_file=exp.log_file,
                             project=exp.project,
-                            cores=1
+                            cores=1,
+                            run_main=exp.run_main
                             )
 
         exp.job_id.append(sent_job)
@@ -176,7 +177,7 @@ def UMI(exp):
 
         else:
             out_dir = make_folder(f'{exp.scratch}UMI/')
-            output('Deduplicating bam files using UMIs with UMI-tools.', log_file=exp.log_file)
+            output('Deduplicating bam files using UMIs with UMI-tools.', log_file=exp.log_file, run_main=exp.run_main)
 
             for index in IPs[IPs.Condition == experiment].index.tolist():
                 sample = IPs.loc[index, 'Sample_Name']
@@ -208,7 +209,8 @@ def UMI(exp):
                                            mem=40000,
                                            log_file=exp.log_file,
                                            project=exp.project,
-                                           cores=1
+                                           cores=1,
+                                           run_main=exp.run_main
                                            ))
 
                 exp.sample_files[sample]['nodup_bam'] = nodup_bam
@@ -216,7 +218,7 @@ def UMI(exp):
 
     job_wait(exp.job_id, exp.log_file)
 
-    output('Dedplication complete.  Submitting deduplicated files for the remainder of processing.', log_file=exp.log_file)
+    output('Dedplication complete.  Submitting deduplicated files for the remainder of processing.', log_file=exp.log_file, run_main=exp.run_main)
     exp.tasks_complete.append('UMI')
 
     return encode3(exp)
@@ -233,7 +235,7 @@ def encode_results(exp):
         exp_dir = f'{exp.scratch}ENCODE3/{experiment}/'
         cromwell_folder = '{}cromwell-executions/chip/*/call-{}/shard-*/execution/'
         non_shard_folder = '{}cromwell-executions/chip/*/call-{}/execution/'
-        output(f'Extracting results from {experiment}', log_file=exp.log_file)
+        output(f'Extracting results from {experiment}', log_file=exp.log_file, run_main=exp.run_main)
 
         samples = exp.IPs[exp.IPs.Condition == experiment].Sample_Name.tolist()
 
@@ -298,13 +300,13 @@ def spike(exp):
     spike_list = [sample for sample in exp.samples if 'none' not in exp.IPs.loc[exp.IPs.Sample_Name == sample, 'Spike Comparison'].tolist()]
 
     if len(spike_list) == 0:
-        output('Not processing Spike-ins', log_file=exp.log_file)
+        output('Not processing Spike-ins', log_file=exp.log_file, run_main=exp.run_main)
         exp.tasks_complete.append('Spike')
         return exp
 
     # Make QC folder
     spike_folder = make_folder(f'{exp.scratch}spike/')
-    output('Processing samples with drosophila-spike in chromatin.', log_file=exp.log_file)
+    output('Processing samples with drosophila-spike in chromatin.', log_file=exp.log_file, run_main=exp.run_main)
 
     for sample in spike_list:
         bam = exp.sample_files[sample]['bam']
@@ -328,20 +330,21 @@ def spike(exp):
                                    mem=10000,
                                    log_file=exp.log_file,
                                    project=exp.project,
-                                   cores=2
+                                   cores=2,
+                                   run_main=exp.run_main
                                    ))
 
     # Wait for jobs to finish
-    job_wait(exp.job_id, exp.log_file)
+    job_wait(exp.job_id, exp.log_file, exp.run_main)
 
     for sample in spike_list:
         exp.sample_files[sample]['drosophila'] = f'{spike_folder}{sample}.unique_drosophila.flagstat.qc'
 
-    output('Spike-in alignment jobs finished.', log_file=exp.log_file)
+    output('Spike-in alignment jobs finished.', log_file=exp.log_file, run_main=exp.run_main)
 
     # Generate one dataframe for all spike_counts
 
-    output(f"Spike-in processing complete: {datetime.now():%Y-%m-%d %H:%M:%S}\n", log_file=exp.log_file)
+    output(f"Spike-in processing complete: {datetime.now():%Y-%m-%d %H:%M:%S}\n", log_file=exp.log_file, run_main=exp.run_main)
 
     exp.tasks_complete.append('Spike')
     return exp

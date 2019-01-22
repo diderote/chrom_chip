@@ -84,7 +84,7 @@ def plot_col(df, title, ylabel, out='', xy=(None, None), xticks=[''], plot_type=
         plt.close()
 
     out_result(f"{out}{title.replace(' ', '_')}.png", f'{title} Plot')
-    output(f"{title.replace(' ', '_')}.png found in {out}", log_file=log_file)
+    output(f"{title.replace(' ', '_')}.png found in {out}", log_file=log_file, run_main=run_main)
 
 
 def deeptools(regions, signals, matrix_name, out_name, pegasus_folder, title='', bps=(1500, 1500, 4000), type='center', scaled_names=('TSS', 'TES'), make=('matrix', 'heatmap', 'heatmap_group', 'profile', 'profile_group')):

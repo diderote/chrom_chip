@@ -11,7 +11,7 @@ from chrome_chip import Experiment
 from chrome_chip.common import val_folder, output, read_pd, glob_check, make_folder, version
 
 
-def parse_config(config_file):
+def parse_config(config_file, run_main=False):
     '''
     Parse experimental info from yaml file
     '''
@@ -24,6 +24,9 @@ def parse_config(config_file):
 
     # Project
     exp.project = yml['LSF_Project']
+
+    # Check if running as pipeline
+    exp.run_main = run_main
 
     # Setting Scratch folder
     exp.scratch = f'{os.getcwd()}/{yml["Name"]}_tmp/' if yml["Scratch_folder"] is None else f'{val_folder(yml["Scratch_folder"])}{yml["Name"]}/'
@@ -46,7 +49,7 @@ def parse_config(config_file):
             # For output of R logs into job_log_folder
             os.chdir(exp.job_folder)
 
-            output(f'\n#############\nRestarting pipeline on {datetime.now():%Y-%m-%d %H:%M:%S}, from last completed step.', log_file=exp.log_file)
+            output(f'\n#############\nRestarting pipeline on {datetime.now():%Y-%m-%d %H:%M:%S}, from last completed step.', log_file=exp.log_file, run_main=exp.run_main)
 
             return exp
         else:
@@ -58,10 +61,10 @@ def parse_config(config_file):
     # Log file
     exp.log_file = f'{exp.out_dir}{exp.name}-{exp.date}.log'
 
-    output(f'Pipeline version {version()} run on {exp.date} \n', log_file=exp.log_file)
-    output(f'Beginning ChIPseq Analysis: {datetime.now():%Y-%m-%d %H:%M:%S}\n', log_file=exp.log_file)
-    output('Reading experimental file...\n', log_file=exp.log_file)
-    output(f"Pipeline output folder: {exp.out_dir}\n", log_file=exp.log_file)
+    output(f'Pipeline version {version()} run on {exp.date} \n', log_file=exp.log_file, run_main=run_main)
+    output(f'Beginning ChIPseq Analysis: {datetime.now():%Y-%m-%d %H:%M:%S}\n', log_file=exp.log_file, run_main=run_main)
+    output('Reading experimental file...\n', log_file=exp.log_file, run_main=run_main)
+    output(f"Pipeline output folder: {exp.out_dir}\n", log_file=exp.log_file, run_main=run_main)
 
     # Setting Job Folder
     exp.job_folder = f'{val_folder(exp.scratch)}logs/'
@@ -73,7 +76,7 @@ def parse_config(config_file):
     # Make Sample Name
     exp.sample_df.replace([np.nan], 'none', inplace=True)
     exp.sample_df['Sample_Name'] = exp.sample_df.Condition + '_' + exp.sample_df.Replicate
-    output(f'Processing samples:\n{exp.sample_df}', log_file=exp.log_file)
+    output(f'Processing samples:\n{exp.sample_df}', log_file=exp.log_file, run_main=run_main)
 
     # Paired
     exp.sample_df['paired'] = [x != 'none' for x in exp.sample_df.File2.tolist()]
@@ -103,6 +106,6 @@ def parse_config(config_file):
     # Initialized Process Complete List
     exp._parsed = True
 
-    output(f'Experiment file parsed: {datetime.now():%Y-%m-%d %H:%M:%S}\n', log_file=exp.log_file)
+    output(f'Experiment file parsed: {datetime.now():%Y-%m-%d %H:%M:%S}\n', log_file=exp.log_file, run_main=run_main)
 
     return exp

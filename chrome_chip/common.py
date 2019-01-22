@@ -26,15 +26,9 @@ import random
 import time
 from datetime import datetime
 
-from . import __name__
-
 __author__ = 'Daniel L. Karl'
 __license__ = 'MIT'
 __version__ = '0.1'
-
-
-def run_main():
-    return True if __name__ == '__main__' else False
 
 
 def version():
@@ -86,7 +80,7 @@ def read_pd(file):
         raise IOError("Cannot parse file.  Make sure it is .txt, .xls, .xlsx, .bed, or *Peak.gz")
 
 
-def output(text, log_file=None, run_main=run_main()):
+def output(text, log_file=None, run_main=False):
     if run_main:
         print(text, file=open(log_file, 'a'))
     else:
@@ -143,14 +137,14 @@ def out_result(image, text, run_main):
 
 
 def close_out(task, exp):
-        output(f'Error in {task}.', log_file=exp.log_file)
+        output(f'Error in {task}.', log_file=exp.log_file, run_main=exp.run_main)
         filename = f'{exp.scratch}{exp.name}_incomplete.pkl'
         with open(filename, 'wb') as experiment:
             pickle.dump(exp, experiment)
         raise RuntimeError(f'Error in {task}. Fix problem then resubmit with same command to continue from last completed step.')
 
 
-def send_job(command_list, job_name, job_log_folder, q, mem, log_file, project, cores=1, submit=False):
+def send_job(command_list, job_name, job_log_folder, q, mem, log_file, project, cores=1, submit=False, run_main=False):
     '''
     Sends job to LSF pegasus.ccs.miami.edu
     '''
@@ -177,13 +171,13 @@ def send_job(command_list, job_name, job_log_folder, q, mem, log_file, project, 
     with open(job_path_name, 'w') as file:
         file.write(cmd)
     os.system(f'bsub < {job_path_name}')
-    output(f'sending {job_name} as ID_{rand_id}...', log_file=log_file)
+    output(f'sending {job_name} as ID_{rand_id}...', log_file=log_file, run_main=run_main)
     time.sleep(2)  # too many conda activations at once sometimes leads to inability to activate during a job.
 
     return rand_id
 
 
-def job_wait(id_list, log_file):
+def job_wait(id_list, log_file, run_main=False):
     '''
     Waits for jobs sent by send job to finish.
     '''
@@ -198,11 +192,11 @@ def job_wait(id_list, log_file):
         if len(current) == 0:
             waiting = False
         else:
-            output(f'Waiting for jobs to finish... {datetime.now():%Y-%m-%d %H:%M:%S}', log_file=log_file)
+            output(f'Waiting for jobs to finish... {datetime.now():%Y-%m-%d %H:%M:%S}', log_file=log_file, run_main=run_main)
             time.sleep(60)
 
 
-def job_pending(job, log_file):
+def job_pending(job, log_file, run_main=False):
     '''
     Waits for jobs sent by send job to start running.
     '''
@@ -211,7 +205,7 @@ def job_pending(job, log_file):
         with os.popen('bjobs -p') as stream:
             job_list = stream.read()
         if len([j for j in re.findall(r'ID_(\d+)', job_list) if j == job]) != 0:
-            output(f'Waiting for jobs to start running... {datetime.now():%Y-%m-%d %H:%M:%S}', log_file=log_file)
+            output(f'Waiting for jobs to start running... {datetime.now():%Y-%m-%d %H:%M:%S}', log_file=log_file, run_main=run_main)
         else:
             waiting = False
         time.sleep(60)
@@ -220,7 +214,7 @@ def job_pending(job, log_file):
 def validated_run(task, func, exp):
     try:
         if task in exp.tasks_complete:
-            output(f'Skipping {task}...', log_file=exp.log_file)
+            output(f'Skipping {task}...', log_file=exp.log_file, run_main=exp.run_main)
             return exp
         else:
             return func(exp)

@@ -13,7 +13,7 @@ def stage(exp):
     '''
     Stages files in scratch folder
     '''
-    output(f'Staging in {exp.scratch}\n', log_file=exp.log_file)
+    output(f'Staging in {exp.scratch}\n', log_file=exp.log_file, run_main=exp.run_main)
     exp.data_folder = make_folder(f'{exp.scratch}raw_data/')
 
     Scratch_File1 = []
@@ -63,7 +63,7 @@ def stage(exp):
     exp.sample_df.replace([f'{exp.data_folder}none'], 'none', inplace=True)
 
     exp.tasks_complete.append('Stage')
-    output(f'Staging complete: {datetime.now():%Y-%m-%d %H:%M:%S}\n', log_file=exp.log_file)
+    output(f'Staging complete: {datetime.now():%Y-%m-%d %H:%M:%S}\n', log_file=exp.log_file, run_main=exp.run_main)
 
     return exp
 
@@ -72,7 +72,7 @@ def fastqc(exp):
     '''
     Performs fastq spec analysis with FastQC
     '''
-    output('Assessing fastq quality. \n', log_file=exp.log_file)
+    output('Assessing fastq quality. \n', log_file=exp.log_file, run_main=exp.run_main)
 
     # Make QC folder
     exp.qc_folder = make_folder(f'{exp.scratch}QC/')
@@ -92,7 +92,8 @@ def fastqc(exp):
                                    q='general',
                                    mem=5000,
                                    log_file=exp.log_file,
-                                   project=exp.project
+                                   project=exp.project,
+                                   run_main=exp.run_main
                                    ))
 
     # Wait for jobs to finish
@@ -106,7 +107,7 @@ def fastqc(exp):
         os.remove(f)
 
     exp.tasks_complete.append('FastQC')
-    output(f'FastQC complete: {datetime.now():%Y-%m-%d %H:%M:%S}\n', log_file=exp.log_file)
+    output(f'FastQC complete: {datetime.now():%Y-%m-%d %H:%M:%S}\n', log_file=exp.log_file, run_main=exp.run_main)
 
     return exp
 
@@ -116,7 +117,7 @@ def fastq_screen(exp):
     Checks fastq files for contamination with alternative genomes using Bowtie2
     '''
 
-    output(f'Screening for contamination during sequencing: {datetime.now():%Y-%m-%d %H:%M:%S}\n', log_file=exp.log_file)
+    output(f'Screening for contamination during sequencing: {datetime.now():%Y-%m-%d %H:%M:%S}\n', log_file=exp.log_file, run_main=exp.run_main)
 
     # Make QC folder
     exp.qc_folder = make_folder(f'{exp.scratch}QC/')
@@ -139,7 +140,8 @@ def fastq_screen(exp):
                                    mem=3000,
                                    log_file=exp.log_file,
                                    project=exp.project,
-                                   cores=2
+                                   cores=2,
+                                   run_main=exp.run_main
                                    ))
         time.sleep(1)
 
@@ -156,7 +158,7 @@ def fastq_screen(exp):
     os.chdir(cwd)
 
     exp.tasks_complete.append('Fastq_screen')
-    output(f'Screening complete: {datetime.now():%Y-%m-%d %H:%M:%S}\n', log_file=exp.log_file)
+    output(f'Screening complete: {datetime.now():%Y-%m-%d %H:%M:%S}\n', log_file=exp.log_file, run_main=exp.run_main)
 
     return exp
 
@@ -167,7 +169,7 @@ def trim(exp):
     Cudadapt can hard clip both ends, but may ignore 3' in future.
     '''
 
-    output(f'Beginning fastq trimming: {datetime.now():%Y-%m-%d %H:%M:%S}\n', log_file=exp.log_file)
+    output(f'Beginning fastq trimming: {datetime.now():%Y-%m-%d %H:%M:%S}\n', log_file=exp.log_file, run_main=exp.run_main)
 
     for sample_dict in exp.sample_df[['Scratch_File1', 'Scratch_File2', 'Sequencer', 'Sample_Name']].to_dict(orient='records'):
 
@@ -183,7 +185,7 @@ def trim(exp):
         if (single in data_files) or (paired in data_files):
             continue
         else:
-            output(f'Trimming {sample}: ', log_file=exp.log_file)
+            output(f'Trimming {sample}: ', log_file=exp.log_file, run_main=exp.run_main)
 
             if seq_type == 'paired':
                 cutadapt = f'cutadapt -j 4 -a AGATCGGAAGAGC -A AGATCGGAAGAGC --cores=10 {quality} -m 18 '
@@ -205,16 +207,17 @@ def trim(exp):
                                        mem=1000,
                                        log_file=exp.log_file,
                                        project=exp.project,
-                                       cores=2
+                                       cores=2,
+                                       run_main=exp.run_main
                                        ))
 
     # Wait for jobs to finish
-    job_wait(exp.job_id, exp.log_file)
+    job_wait(exp.job_id, exp.log_file, exp.run_main)
 
     # move logs to qc folder
-    output('\nTrimming logs are found in stdout files from bsub.  Cutadapt does not handle log files in multi-core mode.', log_file=exp.log_file)
+    output('\nTrimming logs are found in stdout files from bsub.  Cutadapt does not handle log files in multi-core mode.', log_file=exp.log_file, run_main=exp.run_main)
 
     exp.tasks_complete.append('Trim')
-    output(f'Trimming complete: {datetime.now():%Y-%m-%d %H:%M:%S}\n', log_file=exp.log_file)
+    output(f'Trimming complete: {datetime.now():%Y-%m-%d %H:%M:%S}\n', log_file=exp.log_file, run_main=exp.run_main)
 
     return exp
