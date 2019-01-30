@@ -11,7 +11,7 @@ from rpy2.robjects import pandas2ri
 import gseapy
 
 from chrome_chip.plot import plot_venn2, plot_venn2_set, plot_venn3_counts, plot_venn3_set
-from chrome_chip.common import out_result, rout_write, output, val_folder, make_folder, load_bedtool, read_pd
+from chrome_chip.common import out_result, rout_write, output, make_folder, load_bedtool, read_pd, bed2df
 
 
 def overlaps(exp):
@@ -29,6 +29,8 @@ def overlaps(exp):
 
         if (peakset == 'overlap_peak') and ('none' in [exp.sample_files[condition]['overlap_peak'] for condition in overlap_list]):
             output(f'ENCODE processing did not finish for at least one of the samples in the comparison {comparison}.  Skipping overlap...', log_file=exp.log_file, run_main=exp.run_main)
+            with open(f'{comp_dir}SKIPPING_OVERLAP.txt', 'w') as file:
+                file.write('Cannot find the peaks for at least one sample.  Skipping overlap...')
             continue
 
         for condition in overlap_list:
@@ -39,6 +41,8 @@ def overlaps(exp):
         genome_list = exp.IPs.loc[exp.IPs['Comparison Name'] == comparison, 'Genome'].unique().tolist()
         if len(genome_list) > 1:
             output(f'Cannot overlap peaks from different genomes for {condition}.', log_file=exp.log_file, run_main=exp.run_main)
+            with open(f'{comp_dir}SKIPPING_OVERLAP.txt', 'w') as file:
+                file.write('Cannot overlap peaks from different genomes for this condition.')
             continue
         else:
             genome = genome_list[0]
@@ -48,7 +52,10 @@ def overlaps(exp):
         elif len(overlap_list) == 3:
             exp.overlap_results[comparison] = overlap_three(bed_dict, comparison, comp_dir, exp.log_file, genome=genome, run_main=exp.run_main)
         else:
-            raise Exception('Can only overlap two or three conditions.')
+            output(f'Cannot overlap more than three samples for {condition}.', log_file=exp.log_file, run_main=exp.run_main)
+            with open(f'{comp_dir}SKIPPING_OVERLAP.txt', 'w') as file:
+                file.write('Cannot overlap more than three samples.')
+            continue
 
     output(f'Overlap analysis complete: {datetime.now():%Y-%m-%d %H:%M:%S}\n', log_file=exp.log_file, run_main=exp.run_main)
 
@@ -65,13 +72,16 @@ def annotation(exp):
             peakset = 'overlap_peak' if exp.sample_files[condition]['idr_optimal_peak'] == 'none' else 'idr_optimal_peak'
             exp.sample_files[condition]['peaktype'] = peakset
 
-    peakfiles = {condition: read_pd(exp.sample_files[condition][exp.sample_files[condition]['peaktype']]) for condition in exp.IPs['Condition'].unique().tolist()}
+    peakfiles = {condition: read_pd(exp.sample_files[condition][exp.sample_files[condition]['peaktype']])
+                 for condition in exp.IPs['Condition'].unique().tolist()
+                 if exp.sample_files[condition][exp.sample_files[condition]['peaktype']] != 'none'
+                 }
 
-    for condition, file in peakfiles:
+    for condition, file in peakfiles.items():
         genome = exp.IPs.loc[exp.IPs.Condition == condition, 'Genome'].unique().tolist()[0]
 
-        cond_dir = make_folder(f'{out_dir}condition/')
-        anno_results = annotate_peaks(file, cond_dir, genome, db='UCSC', check=False, log_file=exp.log_file, run_main=exp.run_main)
+        cond_dir = make_folder(f'{out_dir}{condition}/')
+        anno_results = annotate_peaks({condition: file}, cond_dir, genome, db='UCSC', check=False, log_file=exp.log_file, run_main=exp.run_main)[f'{condition}_annotated']
         anno_list = anno_results.SYMBOL.unique().tolist()
         enrichr(anno_list, f'enrichr_{condition}', cond_dir, scan=None, max_terms=10, figsize=(12, 6), run_main=exp.run_main)
 
@@ -102,14 +112,16 @@ def annotate_peaks(dict_of_dfs, folder, genome, log_file, db='UCSC', check=False
     ri.set_writeconsole_regular(rout_write)
     ri.set_writeconsole_warnerror(rout_write)
 
+    folder = make_folder(folder)
+
     chipseeker = importr('ChIPseeker')
     genomicFeatures = importr('GenomicFeatures')
     makeGR = ro.r("makeGRangesFromDataFrame")
 
-    check_df = {key: os.path.isfile(f'{folder}{key.replace(" ", "_")}_annotated.txt') for key in dict_of_dfs.keys()}
+    check_df = {key: os.path.isfile(f'{folder}{key.replace(" ", "_")}_annotated.xlsx') for key in dict_of_dfs.keys()}
     return_bool = False not in set(check_df.values())
     if return_bool & check:
-        return {f'{key}_annotated': pd.from_csv(f'{folder}{key.replace(" ", "_")}_annotated.txt', index_col=0, header=0, sep="\t") for key in dict_of_dfs.keys()}
+        return {f'{key}_annotated': pd.from_excel(f'{folder}{key.replace(" ", "_")}_annotated.xlsx') for key in dict_of_dfs.keys()}
 
     if db.lower() == 'ucsc':
         species = ('Mmusculus' if genome.lower() == 'mm10' else 'Hsapiens')
@@ -121,8 +133,6 @@ def annotate_peaks(dict_of_dfs, folder, genome, log_file, db='UCSC', check=False
         txdb = loadDb(pwd.format(genome.lower()))
     else:
         raise ValueError('UCSC or Ensembl only.')
-
-    os.makedirs(folder, exist_ok=True)
 
     if genome.lower() == 'mm10':
         annoDb = importr('org.Mm.eg.db')
@@ -136,14 +146,14 @@ def annotate_peaks(dict_of_dfs, folder, genome, log_file, db='UCSC', check=False
     output('Annotating Peaks...', log_file=log_file, run_main=run_main)
     for key, df in dict_of_dfs.items():
         if check & check_df[key]:
-            return_dict[f'{key}_annotated'] = pd.from_csv(f'{folder}{key.replace(" ", "_")}_annotated.txt', index_col=0, header=0, sep="\t")
+            return_dict[f'{key}_annotated'] = pd.from_excel(f'{folder}{key.replace(" ", "_")}_annotated.xlsx')
         else:
             col_len = len(df.columns)
             df.columns = ["chr", "start", "end"] + list(range(col_len - 3))
             GR = makeGR(df)
             GR_anno = chipseeker.annotatePeak(GR, overlap='all', TxDb=txdb, annoDb=anno)
             return_dict[f'{key}_annotated'] = ro.pandas2ri.ri2py(chipseeker.as_data_frame_csAnno(GR_anno))
-            return_dict[f'{key}_annotated'].to_csv(f'{folder}{key.replace(" ", "_")}_annotated.txt', index=True, header=True, sep="\t")
+            return_dict[f'{key}_annotated'].to_excel(f'{folder}{key.replace(" ", "_")}_annotated.xlsx', index=None)
 
     return return_dict
 
@@ -182,7 +192,10 @@ def overlap_two(bed_dict, overlap_name, out_folder, log_file, genome=None, run_m
         overlap_dict[f'{key}_unique_peak'] = masterfile.intersect(sorted_dict[key]).intersect(list(other.values())[0], v=True)
 
     for key, bed in overlap_dict.items():
-        bed.to_dataframe().to_csv(f'{out_folder}{key.replace(" ", "_")}-unique-peaks-from-mergedPeaks.bed', header=None, index=None, sep="\t")
+        if len(bed) == 0:
+            open(f'{out_folder}{key.replace(" ", "_")}-unique-peaks-from-mergedPeaks.bed', 'w').close()  # Can't convert empty bed file to dataframe
+        else:
+            bed2df(bed).to_csv(f'{out_folder}{key.replace(" ", "_")}-unique-peaks-from-mergedPeaks.bed', header=None, index=None, sep="\t")
 
     overlap_numbers = pd.Series({names[0]: len(overlap_dict[f'{names[0]}_unique_peak']),
                                  names[1]: len(overlap_dict[f'{names[1]}_unique_peak']),
@@ -193,18 +206,21 @@ def overlap_two(bed_dict, overlap_name, out_folder, log_file, genome=None, run_m
 
     # Venn
     plot_venn2(overlap_numbers, overlap_name.replace('_', ' '), out_folder)
-    out_result(f'{out_folder}venn_plot/{overlap_name.replace(" ","_")}-overlap.png', f"{overlap_name.replace('_',' ')} Peak Venn Overlap")
+    out_result(f'{out_folder}venn_plot/{overlap_name.replace(" ","_")}-overlap.png', f"{overlap_name.replace('_',' ')} Peak Venn Overlap", run_main=run_main)
 
     if bool(genome):
         # output(f'Annotating overlaping peaks for {overlap_name.replace("_"," ")}...', log_file)
         # Annotate with ChIPseeker
         unikey = '{}_unique'
         unianno = '{}_unique_annotated'
-        return_dict = annotate_peaks({unikey.format(key): bed.to_dataframe() for key, bed in overlap_dict.items()}, out_folder, genome=genome, log_file=log_file, run_main=run_main)
+        return_dict = annotate_peaks({unikey.format(key): bed2df(bed) for key, bed in overlap_dict.items() if len(bed) > 0}, out_folder, genome=genome, log_file=log_file, run_main=run_main)
+        for key, bed in overlap_dict.items():
+            if len(bed) == 0:
+                return_dict[unianno.format(key)] = None
 
-        Set1_unique = set(return_dict[unianno.format(f'{names[0]}_unique_peak')].SYMBOL.unique().tolist())
-        Set2_unique = set(return_dict[unianno.format(f'{names[1]}_unique_peak')].SYMBOL.unique().tolist())
-        Overlap_Set = set(return_dict[unianno.format('overlap')].SYMBOL.unique().tolist())
+        Set1_unique = set() if return_dict[unianno.format(f'{names[0]}_unique_peak')] is None else set(return_dict[unianno.format(f'{names[0]}_unique_peak')].SYMBOL.unique().tolist())
+        Set2_unique = set() if return_dict[unianno.format(f'{names[1]}_unique_peak')] is None else set(return_dict[unianno.format(f'{names[1]}_unique_peak')].SYMBOL.unique().tolist())
+        Overlap_Set = set() if return_dict[unianno.format('overlap')] is None else set(return_dict[unianno.format('overlap')].SYMBOL.unique().tolist())
 
         venn2_dict = {names[0]: (Set1_unique | Overlap_Set),
                       names[1]: (Set2_unique | Overlap_Set)
@@ -212,21 +228,20 @@ def overlap_two(bed_dict, overlap_name, out_folder, log_file, genome=None, run_m
 
         plot_name = f'{overlap_name.replace("_"," ")} Annotated Gene'
         plot_venn2_set(venn2_dict, plot_name, out_folder)
-        out_result(f'{out_folder}venn_plot/{plot_name.replace(" ","_")}-overlap.png', f"{overlap_name.replace('_',' ')} Venn Annotated Gene Overlap")
+        out_result(f'{out_folder}venn_plot/{plot_name.replace(" ","_")}-overlap.png', f"{overlap_name.replace('_',' ')} Venn Annotated Gene Overlap", run_main=run_main)
 
         gene_overlaps = {}
         gene_overlaps[f'{names[0]}_unique_genes'] = Set1_unique - (Set2_unique | Overlap_Set)
         gene_overlaps[f'{names[1]}_unique_genes'] = Set2_unique - (Set1_unique | Overlap_Set)
         gene_overlaps['Overlap_Gene_Set'] = (Set1_unique & Set2_unique) | Overlap_Set
 
+        return_dict = {key: bed2df(bed) for key, bed in overlap_dict.items()}
+
         for key, item in gene_overlaps.items():
             return_dict[key] = item
 
-        for key, bed in overlap_dict.items():
-            return_dict[key] = bed.to_dataframe()
-
     else:
-        return_dict = {key: bed.to_dataframe() for key, bed in overlap_dict.items()}
+        return_dict = {key: bed2df(bed) for key, bed in overlap_dict.items()}
 
     return return_dict
 
@@ -254,7 +269,7 @@ def overlap_three(bed_dict, overlap_name, out_folder, log_file, genome=None, run
 
     names = list(bed_dict.keys())
 
-    out = make_folder(f"{val_folder(out_folder)}{overlap_name}/")
+    out = make_folder(out_folder)
 
     output(f'Output files are found in {out}', log_file=log_file, run_main=run_main)
     output(f'A: {names[0]}, B: {names[1]}, C: {names[2]}', log_file=log_file, run_main=run_main)
@@ -284,28 +299,32 @@ def overlap_three(bed_dict, overlap_name, out_folder, log_file, genome=None, run
 
     output(f'{labTup}\n{lenTup}', log_file=log_file, run_main=run_main)
 
-    plot_venn3_counts(lenTup[4:], names, '', out)
-    out_result(f'{out}venn_plot/{overlap_name}-overlap.png', f"{overlap_name} Peak Venn Overlap")
+    plot_venn3_counts(lenTup[4:], names, f'{overlap_name} Peak', out)
+    out_result(f'{out}venn_plot/{overlap_name}_Peak-overlap.png', f"{overlap_name} Peak Venn Overlap", run_main=run_main)
 
     for key, bed in sorted_dict.items():
-        if len(bed) > 0:
-            bed.to_dataframe().to_csv(f"{out}{key.replace(' ', '_')}-peaks-from-mergedPeaks.bed",
-                                      header=None, index=None, sep="\t")
+        if len(bed) == 0:
+            open(f'{out}{key.replace(" ", "_")}-peaks-from-mergedPeaks.bed', 'w').close()  # Can't convert empty bed file to dataframe
+        else:
+            bed2df(bed).to_csv(f"{out}{key.replace(' ', '_')}-peaks-from-mergedPeaks.bed", header=None, index=None, sep="\t")
 
     if bool(genome):
         output('Annotating ovelapped peaks...', log_file=log_file)
         unikey = '{}_unique'
         unianno = '{}_unique_annotated'
-        return_dict = annotate_peaks({unikey.format(key): bed.to_dataframe() for key, bed in sorted_dict.items()}, out, genome=genome, log_file=log_file, run_main=run_main)
+        return_dict = annotate_peaks({unikey.format(key): bed2df(bed) for key, bed in sorted_dict.items() if len(bed) > 0}, out, genome=genome, log_file=log_file, run_main=run_main)
+        for key, bed in sorted_dict.items():
+            if len(bed) == 0:
+                return_dict[unianno.format(key)] = None
 
-        Set1 = set(return_dict[unianno.format('A')].SYMBOL.unique().tolist())
-        Set2 = set(return_dict[unianno.format('B')].SYMBOL.unique().tolist())
-        Set3 = set(return_dict[unianno.format('C')].SYMBOL.unique().tolist())
+        Set1 = set() if return_dict[unianno.format('A')] is None else set(return_dict[unianno.format('A')].SYMBOL.unique().tolist())
+        Set2 = set() if return_dict[unianno.format('B')] is None else set(return_dict[unianno.format('B')].SYMBOL.unique().tolist())
+        Set3 = set() if return_dict[unianno.format('C')] is None else set(return_dict[unianno.format('C')].SYMBOL.unique().tolist())
 
         plot_venn3_set({names[0]: Set1, names[1]: Set2, names[2]: Set3}, f'{overlap_name}_annotated_genes', out)
         out_result(f'{out}venn_plot/{overlap_name}_annotated_genes-overlap.png', f"{overlap_name.replace('_',' ')} Gene Venn Overlap", run_main=run_main)
 
-    return_sorted_dict = {key: bed.to_dataframe() for key, bed in sorted_dict.items()}
+    return_sorted_dict = {key: bed2df(bed) for key, bed in sorted_dict.items()}
 
     return return_sorted_dict if genome is None else {**return_sorted_dict, **return_dict}
 
@@ -356,9 +375,8 @@ def enrichr(gene_list, description, out_dir, scan=None, max_terms=10, figsize=(1
 
         out_result(f'{out_dir}{nick}.{name}.enrichr.reports.png', f'Enrichr: {nick} for {description}', run_main=run_main)
 
-    with open(f'{out_dir}{description}_genes.txt', 'w') as fp:
-        for gene in set(gene_list):
-            fp.write(f'{gene}\n')
+    out_list = pd.DataFrame({'Gene Name': gene_list}, index=range(len(gene_list)))
+    out_list.to_excel(f'{out_dir}{description}_genes.excel', index=None)
 
 
 def heatmaps(exp):

@@ -24,6 +24,7 @@ import glob
 import pickle
 import random
 import time
+import shutil
 from datetime import datetime
 
 __author__ = 'Daniel L. Karl'
@@ -119,6 +120,13 @@ def load_bedtool(file):
 def glob_check(path):
     file = glob.glob(path)
     return 'none' if len(file) == 0 else file[0]
+
+
+def bed2df(bed):
+    if len(bed) == 0:
+        return None
+    else:
+        return bed.to_dataframe()
 
 
 def txt_replace(string):
@@ -220,3 +228,16 @@ def validated_run(task, func, exp):
             return func(exp)
     except:
         close_out(task, exp)
+
+
+def clean_encode_folder(exp):
+    # cleans encode folder of all unnecessary heavy files
+    encode_dir = f'{exp.scratch}ENCODE3/'
+    folders = ['*/*/*/*/*fastq*', '*/*/*/*/*pr/', '*/*/*/*/*pr1/', '*/*/*/*/*pr2/', '*/*/*/*/call-choose_ctl/', '*/*/*/*/*bwa*', '*/*/*/*/*filter*']
+    for folder in folders:
+        glob_folders = glob.glob(f'{encode_dir}{folder}')
+        for glob_folder in glob_folders:
+            if os.path.isdir(glob_folder):
+                shutil.rmtree(glob_folder)
+            else:
+                output(f'Could not find {glob_folder}', exp.log_file)

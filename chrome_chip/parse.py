@@ -34,7 +34,7 @@ def parse_config(config_file, run_main=False):
 
     # check whether experiment has been attempted
     exp.name = yml['Name']
-    exp.out_dir = make_folder(yml['Output_directory'])
+    exp.out_dir = make_folder(f"{val_folder(yml['Output_directory'])}{exp.name}/")
     filename = f'{exp.scratch}{exp.name}_incomplete.pkl'
 
     if os.path.isfile(filename):

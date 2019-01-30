@@ -83,7 +83,7 @@ def plot_col(df, title, ylabel, out='', xy=(None, None), xticks=[''], plot_type=
     if run_main:
         plt.close()
 
-    out_result(f"{out}{title.replace(' ', '_')}.png", f'{title} Plot')
+    out_result(f"{out}{title.replace(' ', '_')}.png", f'{title} Plot', run_main=run_main)
     output(f"{title.replace(' ', '_')}.png found in {out}", log_file=log_file, run_main=run_main)
 
 
@@ -172,18 +172,18 @@ def plot_venn2(Series, overlap_name, folder):
     # make venn
     venn_plot = venn2(subsets=(Series.iloc[0], Series.iloc[1], Series.iloc[2]), set_labels=[name.replace('_', ' ') for name in Series.index.tolist()])
     patch = ['10', '01', '11']
-    colors = ['green', 'blue', 'teal']
-    for patch, color in zip(patch, colors):
-        venn_plot.get_patch_by_id(patch).set_color('none')
-        venn_plot.get_patch_by_id(patch).set_alpha(.4)
-        venn_plot.get_patch_by_id(patch).set_edgecolor('none')
+    for p in patch:
+        if venn_plot.get_patch_by_id(p):
+            venn_plot.get_patch_by_id(p).set_color('none')
+            venn_plot.get_patch_by_id(p).set_alpha(.4)
+            venn_plot.get_patch_by_id(p).set_edgecolor('none')
 
     c = venn2_circles(subsets=(Series.iloc[0], Series.iloc[1], Series.iloc[2]))
-    colors_test = ['green', 'blue']
-    for circle, color in zip(c, colors_test):
+    colors = ['green', 'blue']
+    for circle, color in zip(c, colors):
         circle.set_edgecolor(color)
         circle.set_alpha(0.8)
-        circle.set_linewidth(3)
+        circle.set_linewidth(2)
 
     plt.title(overlap_name.replace('_', ' ') + " overlaps")
     plt.tight_layout()
@@ -228,18 +228,18 @@ def plot_venn2_set(dict_of_sets, overlap_name, folder):
     # make venn
     venn_plot = venn2(subsets=set_list, set_labels=set_names)
     patch = ['10', '01', '11']
-    colors = ['green', 'blue', 'teal']
-    for patch, color in zip(patch, colors):
-        venn_plot.get_patch_by_id(patch).set_color('none')
-        venn_plot.get_patch_by_id(patch).set_alpha(.4)
-        venn_plot.get_patch_by_id(patch).set_edgecolor('none')
+    for p in patch:
+        if venn_plot.get_patch_by_id(p):
+            venn_plot.get_patch_by_id(p).set_color('none')
+            venn_plot.get_patch_by_id(p).set_alpha(.4)
+            venn_plot.get_patch_by_id(p).set_edgecolor('none')
 
     c = venn2_circles(subsets=set_list)
-    colors_test = ['green', 'blue']
-    for circle, color in zip(c, colors_test):
+    colors = ['green', 'blue']
+    for circle, color in zip(c, colors):
         circle.set_edgecolor(color)
         circle.set_alpha(0.8)
-        circle.set_linewidth(3)
+        circle.set_linewidth(2)
 
     plt.title(f"{overlap_name.replace('_', ' ')} overlaps")
     plt.tight_layout()

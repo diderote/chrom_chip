@@ -3,7 +3,7 @@
 from chrome_chip.parse import parse_config
 from chrome_chip.common import validated_run
 from chrome_chip.preprocess import stage, fastq_screen, trim, fastqc
-from chrome_chip.encode_pipe import encode3, encode_results, UMI, spike
+from chrome_chip.encode_pipe import encode3, UMI, spike
 from chrome_chip.qc import principal_component_analysis, preseq, final_qc, finish
 from chrome_chip.overlaps import overlaps, annotation, heatmaps
 # from chrom_chip.diff_binding import diff_binding
@@ -17,7 +17,6 @@ def pipeline(experimental_file):
         exp = validated_run('FastQC', fastqc, exp)
         exp = validated_run('ENCODE3', encode3, exp)
         exp = validated_run('UMI', UMI, exp)
-        exp = validated_run('encode_results', encode_results, exp)
         exp = validated_run('Spike', spike, exp)
         exp = validated_run('preseq', preseq, exp)
         exp = validated_run('PCA', principal_component_analysis, exp)

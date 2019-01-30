@@ -8,7 +8,7 @@ import pickle
 import yaml
 from IPython.display import HTML, display
 
-from chrome_chip.common import output, send_job, read_pd, close_out, make_folder
+from chrome_chip.common import output, send_job, read_pd, close_out, make_folder, clean_encode_folder
 from chrome_chip.plot import plot_col
 
 
@@ -48,9 +48,9 @@ def principal_component_analysis(exp):
     bigwigs = {sample: exp.sample_files[sample]['bw'] for sample in exp.samples if len(exp.sample_files[sample]['bw']) != 0}
     multibw_command = f"multiBigwigSummary bins -b {' '.join(list(bigwigs.values()))} -l {' '.join(list(bigwigs.keys()))} -p 4 --chromosomesToSkip chrM,chrX,chrY -o {out_dir}{exp.name}_bwsummary.npz"
 
-    correlation_command = f'plotCorrelation --corData {out_dir}{exp.name}_bwsummary.npz --corMethod pearson --whatToPlot heatmap --skipZeros --plotTitle "{exp.name} Binned Pearson Correlation Heatmap" --plotFileFormat png --outFileCorMatrix {exp.name}_CorMatrix.tab --colorMap Purples -o {out_dir}{exp.name}_CorHeatmap.png'
+    correlation_command = f'plotCorrelation --corData {out_dir}{exp.name}_bwsummary.npz --corMethod pearson --whatToPlot heatmap --skipZeros --plotTitle "{exp.name} Binned Pearson Correlation Heatmap" --plotFileFormat png --outFileCorMatrix {out_dir}{exp.name}_CorMatrix.tab --colorMap Purples -o {out_dir}{exp.name}_CorHeatmap.png'
 
-    pca_command = f'plotPCA --corData {out_dir}{exp.name}_bwsummary.npz --plotTitle "{exp.name} PCA Plot" --plotFileFormat png --outFileNameData {exp.name}_PCA_data.tab --log2 -o {out_dir}{exp.name}_PCAPlot.png'
+    pca_command = f'plotPCA --corData {out_dir}{exp.name}_bwsummary.npz --plotTitle "{exp.name} PCA Plot" --plotFileFormat png --outFileNameData {out_dir}{exp.name}_PCA_data.tab --log2 -o {out_dir}{exp.name}_PCA_Plot.png'
 
     command_list = ['module rm python share-rpms65',
                     'source activate chipseq',
@@ -142,6 +142,7 @@ def finish(exp):
         if exp.run_main:
             copy2(exp.log_file, scratch_log)
 
+        clean_encode_folder(exp)
         rmtree(f'{exp.scratch}/raw_data')
         rmtree(exp.out_dir)
         copytree(exp.scratch, exp.out_dir)

@@ -1,6 +1,6 @@
 # LSF ChIPseq pipeline
 
-This pipeline is a wrapper around the Kundaje lab chipseq_pipeline for use with Pegasus at SCCC at the University of Miami.
+This pipeline is a wrapper around the Kundaje lab chipseq_pipeline2 for use with Pegasus at SCCC at the University of Miami.
 https://github.com/kundajelab/chipseq_pipeline
 
 ## Instructions for installation:
@@ -27,11 +27,12 @@ https://github.com/kundajelab/chipseq_pipeline
 ## Usage
 
 1. Copy the Experimental_Samples.xlsx and chrome_chip_config.yml to a new folder and modify contents for the experiment. 
-2. To run:
-	> source activate chrome_chip
+2. To run (with python3):
 	> chrome_chip -f chrome_chip_config.yml -s -p [your_lsf_project]
+	or 
+	> python chrome_chip -f chrome_chip_config.yml -s -p [your_lsf_project]
 
-	Extra options: 
+	Options: 
 	- Add '-t /path/to/ChIPseq.ipynb' if you running as a jupyter notebook
 	- Add '-o /path/to/output_ChIPseq.ipynb' to name your output notebook something other than your experimental file name.
 	- Add --no-notebook to run as a python script with a log file output.
@@ -44,7 +45,7 @@ Config File Details:
 * Spike_index: Bowtie2 index for aligning spike-in chromatin.
 * Genome_tsv: paths to ENCODE3 installed genome tsv files.  If mulitple species in one experiment, separate by commas.
 
-This pipline handles processing and analyses for ChIPseq data on the University of Miami's Pegasus Computer Cluster using and LSF resource manager.  (Can be readily adpated to other resource managers: SGE, SLURM)  When fully implemented from start to finish it performs the following tasks:
+This pipline handles processing and analyses for ChIPseq data on the University of Miami's Pegasus Computer Cluster using and LSF resource manager.  (Can be readily adpated to other resource managers: SGE, SLURM or local)  When fully implemented from start to finish it performs the following tasks:
 
 1. Screening for contamination of other genomes
 2. Fastq quality measurements
@@ -60,13 +61,12 @@ This pipline handles processing and analyses for ChIPseq data on the University 
 	- signal file generation
 	- IDR analysis
 6. UMI decovolution and deduplication
-7. Alignment, gc content and other qc metrics
+7. QC: alignment metrics, gc content, library complexity with preseq, and other qc metrics
 8. PCA analysis
 9. Overlap analysis
 9. Peak annotation
 10. Enrichment analysis of annotated peaks and overlapped peaks (enrichr: KEGG, GO Biological Process, ChIP-X, ChEA, OMIM Disease)
 11. Differential binding analysis (using spike-in or not)
-12. Library complexity analysis using preseq
 
 The pipeline handles multiple entry/exit points and can parse complex experimental designs and compensation types for DE.  In case of error, the pipeline restarts from the last completed step. Progress is tracked in a .log file in the output directory.
 
