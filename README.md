@@ -35,7 +35,6 @@ https://github.com/kundajelab/chipseq_pipeline
 	Options: 
 	- Add '-t /path/to/ChIPseq.ipynb' if you running as a jupyter notebook
 	- Add '-o /path/to/output_ChIPseq.ipynb' to name your output notebook something other than your experimental file name.
-	- Add --no-notebook to run as a python script with a log file output.
 	- For all options: 'chrome_chip --help'
 
 Config File Details:

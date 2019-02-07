@@ -204,6 +204,15 @@ def job_wait(id_list, log_file, run_main=False):
             time.sleep(60)
 
 
+def move_file(file, dest, dest_type, log_file, run_main):
+    if dest_type.lower() == 'folder':
+        os.makedirs(dest, exist_ok=True)
+    if os.path.isfile(file):
+        shutil.move(file, dest)
+    else:
+        output(f'{file} not found.  Cannot be moved to {dest}', log_file=log_file, run_main=run_main)
+
+
 def job_pending(job, log_file, run_main=False):
     '''
     Waits for jobs sent by send job to start running.
@@ -230,6 +239,29 @@ def validated_run(task, func, exp):
         close_out(task, exp)
 
 
+def move_encode_files(exp):
+    encode_dir = f'{exp.scratch}ENCODE3/'
+    mk_dict = {'jsons': 'submission_jsons',
+               'qc_report': 'report',
+               'overlap_peak': 'overlap_beds',
+               'idr_optimal_peak': 'idr_beds',
+               'narrowPeak': 'sample_beds',
+               'bw': 'bigwigs',
+               'nodup_bam': 'filtered_bams'
+               }
+
+    for folder in mk_dict.values():
+        make_folder(f'{encode_dir}{folder}')
+
+    for json in glob.glob(f'{encode_dir}*/*.json'):
+        move_file(json, f'{encode_dir}submission_jsons/', 'folder', exp.log_file, exp.run_main)
+
+    for name, dct in exp.sample_files.items():
+        for file_type, dest_folder in mk_dict.items():
+            filename = f'{encode_dir}{dest_folder}/{name}_{dct[file_type]}' if file_type == 'qc_report' else f'{encode_dir}{dest_folder}/{dct[file_type]}'
+            move_file(dct[file_type], filename, 'file', exp.log_file, exp.run_main)
+
+
 def clean_encode_folder(exp):
     # cleans encode folder of all unnecessary heavy files
     encode_dir = f'{exp.scratch}ENCODE3/'
@@ -240,4 +272,4 @@ def clean_encode_folder(exp):
             if os.path.isdir(glob_folder):
                 shutil.rmtree(glob_folder)
             else:
-                output(f'Could not find {glob_folder}', exp.log_file)
+                output(f'Could not find {glob_folder}', exp.log_file, exp.run_main)

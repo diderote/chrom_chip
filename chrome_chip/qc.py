@@ -8,7 +8,7 @@ import pickle
 import yaml
 from IPython.display import HTML, display
 
-from chrome_chip.common import output, send_job, read_pd, close_out, make_folder, clean_encode_folder
+from chrome_chip.common import output, send_job, read_pd, close_out, make_folder, move_file
 from chrome_chip.plot import plot_col
 
 
@@ -83,9 +83,10 @@ def final_qc(exp):
 
         os.system(f'multiqc {exp.scratch}*')
 
-        if os.path.isdir(f'{exp.scratch}multiqc_data'):
-            copytree(f'{exp.scratch}multiqc_data', f'{exp.scratch}/QC/multiqc_data')
-            rmtree(f'{exp.scratch}multiqc_data')
+        if os.path.isdir(f'{exp.scratch}logs/multiqc_data'):
+            move_file(f'{exp.scratch}logs/multiqc_report.html', f'{exp.scratch}/QC/', 'folder', log_file=exp.log_file, run_main=exp.run_main)
+            copytree(f'{exp.scratch}logs/multiqc_data', f'{exp.scratch}/QC/multiqc_data')
+            rmtree(f'{exp.scratch}/logs/multiqc_data')
 
         # Summary plots for FastQC data
         fastqc_file = f'{exp.scratch}/QC/multiqc_data/multiqc_fastqc.txt'
@@ -142,7 +143,6 @@ def finish(exp):
         if exp.run_main:
             copy2(exp.log_file, scratch_log)
 
-        clean_encode_folder(exp)
         rmtree(f'{exp.scratch}/raw_data')
         rmtree(exp.out_dir)
         copytree(exp.scratch, exp.out_dir)

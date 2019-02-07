@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 
+import glob
+import re
+
+import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib_venn import venn2, venn2_circles, venn3, venn3_circles
 import seaborn as sns
@@ -355,3 +359,46 @@ def plot_venn3_counts(element_list, set_labels, overlap_name, folder):
     plt.tight_layout()
     plt.savefig(f"{folder}{overlap_name.replace(' ', '_')}-overlap.svg")
     plt.savefig(f"{folder}{overlap_name.replace(' ', '_')}-overlap.png", dpi=300)
+
+
+def extract_AQUAS_report_data(base_folder, out_folder='', histone=False, replicate=False):
+    '''
+    Inputs
+    -----
+    base_folder:  AQUAS results folder.  Will use subfolders for sample name and look for report in those subfolders.
+    replicate: Whether the ChIPseq was performed as a repliate or not.
+
+    Returns
+    -----
+    DataFrame of results
+    '''
+
+    reports = glob.glob(f'{base_folder}/*/*report.html')
+    out_folder = val_folder(out_folder)
+    base_folder = val_folder(base_folder)
+
+    if replicate is True:
+        raise AssertionError('Not set up for replicates yet.')
+
+    results_df = pd.DataFrame(index=['Percent_mapped', 'Mapped_Reads', 'Fraction_Duplicated', 'S_JS_Distance', 'PBC1', 'RSC', 'Raw_Peak_Number', 'N_optimal_overlap_peaks', 'FrIP_IDR', 'N_IDR_peaks'])
+    for file in reports:
+        name = re.findall(r'.*/(.*)_report.html', file)[0]
+        report = pd.read_html(file)
+        series = pd.Series()
+        series['Percent_mapped'] = report[1].iloc[7, 1]
+        series['Mapped_Reads'] = report[2].iloc[5, 1]
+        series['Fraction_Duplicated'] = report[3].iloc[7, 1]
+        series['S_JS_Distance'] = report[4].iloc[7, 1]
+        series['PBC1'] = report[5].iloc[6, 1]
+        series['RSC'] = report[6].iloc[8, 1]
+        series['Raw_Peak_Number'] = report[7].iloc[0, 1]
+        series['N_optimal_overlap_peaks'] = report[10].iloc[4, 1]
+        if histone is False:
+            series['FrIP_IDR'] = report[11].iloc[0, 1]
+            series['N_IDR_peaks'] = report[12].iloc[4, 1]
+        results_df[name] = series
+
+    for index in results_df.index.tolist():
+        plot_col(results_df.loc[index], out=out_folder, title=f'{index}', ylabel=index.replace('_', ' '), plot_type=['violin', 'swarm'])
+
+    return results_df

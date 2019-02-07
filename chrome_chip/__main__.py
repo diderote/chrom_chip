@@ -12,20 +12,16 @@ from chrome_chip.common import send_job
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--experimental_file', '-f', required=True, help='experimental yaml file', type=str)
-parser.add_argument('--notebook', '-n', dest='notebook', help='run as jupyter notebook', action='store_true')
-parser.add_argument('--no-notebook', dest='notebook', help='run as python script', action='store_false')
 parser.add_argument('--template_notebook', '-t', required=False, help='location of template notebook', type=str)
 parser.add_argument('--out_notebook', '-o', required=False, help='name of output notebook', type=str)
 parser.add_argument('--submit', '-s', required=False, help='true will submit to LSF with conda intialization', action='store_true')
 parser.add_argument('--project', '-p', required=False, help='LSF project name for submission', type=str)
-parser.set_defaults(notebook=True, submit=False)
+parser.set_defaults(notebook=False, submit=False)
 args = parser.parse_args()
 
 if args.submit:
         cmd = f'python chrome_chip -f {args.experimental_file}'
-        if not args.notebook:
-            cmd += ' --no-notebook'
-        else:
+        if args.template_notebook:
             cmd += f' -t {args.template_notebook}'
             if args.out_notebook:
                 cmd += f' -o {args.out_notebook}'
