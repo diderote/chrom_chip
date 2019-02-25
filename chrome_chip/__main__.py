@@ -16,7 +16,7 @@ parser.add_argument('--template_notebook', '-t', required=False, help='location 
 parser.add_argument('--out_notebook', '-o', required=False, help='name of output notebook', type=str)
 parser.add_argument('--submit', '-s', required=False, help='true will submit to LSF with conda intialization', action='store_true')
 parser.add_argument('--project', '-p', required=False, help='LSF project name for submission', type=str)
-parser.set_defaults(notebook=False, submit=False)
+parser.set_defaults(submit=False)
 args = parser.parse_args()
 
 if args.submit:
@@ -43,8 +43,8 @@ if args.submit:
                  )
 
 else:
-    if args.notebook:
-        if (os.path.isfile(args.template_notebook) is False) or (args.template_notebook is False):
+    if args.template_notebook:
+        if os.path.isfile(args.template_notebook) is False:
             raise IOError(f'Location of template notebook not found. Use -t option.')
         else:
 
