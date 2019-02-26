@@ -125,8 +125,8 @@ def final_qc(exp):
 def finish(exp):
     try:
 
-        if os.path.isdir(f'{exp.scratch}/raw_data'):
-            rmtree(f'{exp.scratch}/raw_data')
+        if os.path.isdir(f'{exp.scratch}raw_data'):
+            rmtree(f'{exp.scratch}raw_data')
 
         output(f'\nConda environment file: {exp.job_folder}{exp.name}_environmnet.yml\nPackage versions: ', log_file=exp.log_file, run_main=exp.run_main)
 
@@ -143,7 +143,7 @@ def finish(exp):
         if exp.run_main:
             copy2(exp.log_file, scratch_log)
 
-        rmtree(f'{exp.scratch}/raw_data')
+        rmtree(f'{exp.scratch}raw_data')
         rmtree(exp.out_dir)
         copytree(exp.scratch, exp.out_dir)
         rmtree(exp.scratch)
