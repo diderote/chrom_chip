@@ -6,7 +6,7 @@ import re
 import os
 from datetime import datetime
 
-from chrome_chip.common import output, send_job, job_wait, job_pending, glob_check, make_folder, glob_remove
+from chrome_chip.common import output, send_job, job_wait, job_pending, glob_check, make_folder, glob_remove, submission_prepend
 from chrome_chip.preprocess import stage
 
 
@@ -133,8 +133,7 @@ def encode3(exp):
         cromwell_jar = re.sub(r'{}/.*'.format(miniconda), '{}/envs/chrome_chip/share/cromwell/cromwell.jar'.format(miniconda), pythonpath)
         jar = cromwell_jar if os.path.isfile(cromwell_jar) else '~/miniconda3/envs/chrome_chip/share/cromwell/cromwell.jar'
 
-        command_list = ['module rm python share-rpms65',
-                        'source activate encode-chip-seq-pipeline',
+        command_list = [submission_prepend(source='encode-chip-seq-pipeline'),
                         f'cd {exp_dir}',
                         f'java -jar -Dconfig.file={exp.encode3_folder}backends/backend.conf -Dbackend.default=Local {jar} run {exp.encode3_folder}chip.wdl -i {encode_file}'
                         ]
@@ -194,8 +193,7 @@ def UMI(exp):
                 if seq_type == 'paired':
                     umi_string += ' --paired'
 
-                command_list = ['module rm python share-rpms65',
-                                'source activate chrome_chip',
+                command_list = [submission_prepend(),
                                 f'samtools index {bam}',
                                 f'samtools index {input_bam}',
                                 umi_string.format(inbam=bam, outbam=nodup_bam, sample=sample, out_dir=out_dir),
@@ -311,15 +309,14 @@ def spike(exp):
     for sample in spike_list:
         bam = exp.sample_files[sample]['bam']
 
-        spike_command = ['module rm python share-rpms65',
-                         'source activate chrome_chip',
+        spike_command = [submission_prepend(),
                          f'samtools view -b -f 4 {bam} | samtools sort -n - | samtools fastq - > {spike_folder}{sample}.bwa_unaligned.fastq',
                          f'bowtie2 -p 8 -x {exp.genome_indicies["spike_index"]} -U {spike_folder}{sample}.bwa_unaligned.fastq -S {spike_folder}{sample}.BDGP6.sam --very-sensitive-local -k 1 --no-unal',
                          f'samtools view -b -F 4 {spike_folder}{sample}.BDGP6.sam | samtools sort - > {spike_folder}{sample}.BDGP6.bam',
                          f'picard MarkDuplicates I={spike_folder}{sample}.BDGP6.bam O={spike_folder}{sample}.BDGP6.nodup.bam M={spike_folder}{sample}BDGP6.nodups.markdups.qc ASSUME_SORTED=TRUE VALIDATION_STRINGENCY=LENIENT REMOVE_DUPLICATES=true',
                          f'samtools sort -n {spike_folder}{sample}.BDGP6.nodup.bam | samtools fastq - > {spike_folder}{sample}.BDGP6.nodup.fastq',
-                         f'bowtie2 -p 4 -x exp.genome_indicies["genome_bt2_index"] -U {spike_folder}{sample}.BDGP6.nodup.fastq -S {spike_folder}{sample}.hg38.BDGP6.sam --very-sensitive-local -k 1',
-                         f'samtools view -f 4 {spike_folder}{sample}.hg38.BDGP6.sam | samtools flagstat - > {spike_folder}{sample}.unique_drosophila.flagstat.qc',
+                         f'bowtie2 -p 4 -x exp.genome_indicies["genome_bt2_index"] -U {spike_folder}{sample}.BDGP6.nodup.fastq -S {spike_folder}{sample}.TAR_GEN.BDGP6.sam --very-sensitive-local -k 1',
+                         f'samtools view -f 4 {spike_folder}{sample}.TAR_GEN.BDGP6.sam | samtools flagstat - > {spike_folder}{sample}.unique_drosophila.flagstat.qc',
                          f'rm {spike_folder}{sample}.BDGP6.sam {spike_folder}{sample}.BDGP6.bam {spike_folder}{sample}.BDGP6.nodup.bam {spike_folder}{sample}.BDGP6.nodup.fastq {spike_folder}{sample}.hg38.BDGP6.sam'
                          ]
 

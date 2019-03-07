@@ -273,3 +273,20 @@ def clean_encode_folder(exp):
                 shutil.rmtree(glob_folder)
             else:
                 output(f'Could not find {glob_folder}', exp.log_file, exp.run_main)
+
+
+def submission_prepend(submission=None, source='chrome_chip', conda=None, module_list=['python']):
+    '''
+    Prepends a string for a submission script
+    Edit these defualts to optimize for another HPC or other environment
+    '''
+    if len(module_list) > 0:
+        prepend = f'module rm {" ".join(module_list)}\n'
+
+    if source:
+        prepend += f'source activate {source}\n'
+
+    elif conda:
+        prepend += f'conda activate {conda}\n'
+
+    return prepend if submission is None else prepend + submission

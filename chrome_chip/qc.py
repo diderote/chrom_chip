@@ -8,7 +8,7 @@ import pickle
 import yaml
 from IPython.display import HTML, display
 
-from chrome_chip.common import output, send_job, read_pd, close_out, make_folder, move_file
+from chrome_chip.common import output, send_job, read_pd, close_out, make_folder, move_file, submission_prepend
 from chrome_chip.plot import plot_col
 
 
@@ -20,10 +20,7 @@ def preseq(exp):
 
         out_dir = make_folder(f'{exp.scratch}QC/preseq/{sample}/')
 
-        command_list = ['module rm python share-rpms65',
-                        'source activate chipseq',
-                        f'preseq lc_extrap -bam -output {out_dir}{sample}_preseq.txt {exp.sample_files[sample]["bam"]}'
-                        ]
+        command_list = [submission_prepend(f'preseq lc_extrap -bam -output {out_dir}{sample}_preseq.txt {exp.sample_files[sample]["bam"]}')]
 
         exp.job_id.append(send_job(command_list=command_list,
                                    job_name=f"{sample}_preseq",
@@ -52,8 +49,7 @@ def principal_component_analysis(exp):
 
     pca_command = f'plotPCA --corData {out_dir}{exp.name}_bwsummary.npz --plotTitle "{exp.name} PCA Plot" --plotFileFormat png --outFileNameData {out_dir}{exp.name}_PCA_data.tab --log2 -o {out_dir}{exp.name}_PCA_Plot.png'
 
-    command_list = ['module rm python share-rpms65',
-                    'source activate chipseq',
+    command_list = [submission_prepend(),
                     multibw_command,
                     correlation_command,
                     pca_command
@@ -81,7 +77,7 @@ def final_qc(exp):
     try:
         output(f'Beginning final qc: {datetime.now():%Y-%m-%d %H:%M:%S}\n', log_file=exp.log_file, run_main=exp.run_main)
 
-        os.system(f'multiqc {exp.scratch}*')
+        os.system(f'multiqc {exp.scratch}* -o {exp.scratch}logs/')
 
         if os.path.isdir(f'{exp.scratch}logs/multiqc_data'):
             move_file(f'{exp.scratch}logs/multiqc_report.html', f'{exp.scratch}/QC/', 'folder', log_file=exp.log_file, run_main=exp.run_main)
@@ -143,15 +139,14 @@ def finish(exp):
         if exp.run_main:
             copy2(exp.log_file, scratch_log)
 
-        rmtree(f'{exp.scratch}raw_data')
+        '''for sample in exp.sample_files.values():
+             for file in exp.sample_files[sample].values():
+                 if exp.scratch in file:
+                     file.replace(exp.scratch, exp.out_dir)'''
+
         rmtree(exp.out_dir)
         copytree(exp.scratch, exp.out_dir)
         rmtree(exp.scratch)
-
-        for sample in exp.sample_files.values():
-            for file in exp.sample_files[sample].values():
-                if exp.scratch in file:
-                    file.replace(exp.scratch, exp.out_dir)
 
         exp.tasks_complete.append('Finished')
 

@@ -6,7 +6,7 @@ import time
 from datetime import datetime
 from shutil import copy2
 
-from chrome_chip.common import output, val_folder, send_job, job_wait, make_folder, is_fastq, txt_replace
+from chrome_chip.common import output, val_folder, send_job, job_wait, make_folder, is_fastq, txt_replace, submission_prepend
 
 
 def stage(exp):
@@ -81,10 +81,7 @@ def fastqc(exp):
     samples = [file for file in all_samples if is_fastq(file)]
 
     for sample in samples:
-        command_list = ['module rm python perl',
-                        'source activate chrome_chip',
-                        f'fastqc {sample}'
-                        ]
+        command_list = [submission_prepend(f'fastqc {sample}')]
 
         exp.job_id.append(send_job(command_list=command_list,
                                    job_name=f'{sample.split("/")[-1]}_fastqc',
@@ -129,9 +126,7 @@ def fastq_screen(exp):
 
     # Submit fastqc and fastq_screen jobs for each sample
     for sample in samples:
-        command_list = ['module rm python perl',
-                        'source activate chrome_chip',
-                        f'fastq_screen --threads 4 --aligner bowtie2 {sample}']
+        command_list = [submission_prepend(f'fastq_screen --threads 4 --aligner bowtie2 {sample}')]
 
         exp.job_id.append(send_job(command_list=command_list,
                                    job_name=f'{sample.split("/")[-1]}_fastq_screen',
@@ -195,10 +190,7 @@ def trim(exp):
                 cutadapt = f'cutadapt -j 4 -a AGATCGGAAGAGC --cores=10 {quality} -m 18 '
                 cutadapt += f'-o {exp.data_folder}{sample}_trim_R1.fastq.gz {sample_dict["Scratch_File1"]}'
 
-            command_list = ['module rm python perl',
-                            'source activate chrome_chip',
-                            cutadapt
-                            ]
+            command_list = [submission_prepend(cutadapt)]
 
             exp.job_id.append(send_job(command_list=command_list,
                                        job_name=f"{sample}_trim",

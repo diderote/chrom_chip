@@ -8,7 +8,7 @@ PACKAGE_PARENT = '..'
 SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(), os.path.expanduser(__file__))))
 sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
 
-from chrome_chip.common import send_job
+from chrome_chip.common import send_job, submission_prepend
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--experimental_file', '-f', required=True, help='experimental yaml file', type=str)
@@ -26,7 +26,7 @@ if args.submit:
             if args.out_notebook:
                 cmd += f' -o {args.out_notebook}'
 
-        submission_header = ['module rm python share-rpms65', 'source activate chrome_chip', cmd]
+        submission_header = [submission_prepend(cmd)]
 
         job_name = args.experimental_file.split('.')[0]
 

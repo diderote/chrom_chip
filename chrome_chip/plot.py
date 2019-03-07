@@ -9,7 +9,7 @@ from matplotlib_venn import venn2, venn2_circles, venn3, venn3_circles
 import seaborn as sns
 from scipy import stats
 
-from chrome_chip.common import val_folder, out_result, output, make_folder
+from chrome_chip.common import val_folder, out_result, output, make_folder, submission_prepend
 
 
 def plot_col(df, title, ylabel, out='', xy=(None, None), xticks=[''], plot_type=['violin', 'swarm'], pvalue=False, compare_tags=None, log_file=None, run_main=False):
@@ -125,7 +125,7 @@ def deeptools(regions, signals, matrix_name, out_name, pegasus_folder, title='',
         deepHeat = f'--startLabel {scaled_names[0]} --endLabel {scaled_names[1]}'
         deepProf = f'--startLabel {scaled_names[0]} --endLabel {scaled_names[1]}'
 
-    cmd_list = ['module rm python share-rpms65', 'source activate deeptools']
+    cmd_list = [submission_prepend()]
 
     pegasus_region_path = ' '.join([f"{pegasus_folder}{region_path.split('/')[-1]}" for region_path in regions.values()])
     pegasus_signal_path = ' '.join([f"{pegasus_folder}{signal_path.split('/')[-1]}" for signal_path in signals.values()])
