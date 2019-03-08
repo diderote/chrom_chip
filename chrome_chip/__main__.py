@@ -47,11 +47,9 @@ else:
         if os.path.isfile(args.template_notebook) is False:
             raise IOError(f'Location of template notebook not found. Use -t option.')
         else:
-
             import papermill as pm
 
             out_notebook = args.out_notebook if args.out_notebook else args.experimental_file.replace('yml', 'ipynb')
-            pm.execute_notebook(args.template_notebook, out_notebook, parameters=dict(yaml_file=args.experimental_file), perpare_only=True)
             pm.execute_notebook(args.template_notebook, out_notebook, parameters=dict(yaml_file=args.experimental_file), log_output=True, report_mode=True)
     else:
         from chrome_chip.pipeline import pipeline

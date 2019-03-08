@@ -40,7 +40,7 @@ def html_header(version=__version__, author=__author__, license=__license__):
     return ''.join(['<h1>ChIPseq Analysis Notebook</h1>',
                     f'<body><b>Experiment Date: {datetime.now():%Y-%m-%d}<br>',
                     f'Pipeline version: {version}</b><br>',
-                    '<a href="http://www.github.com/diderote/LSF-aquaFor">Pipeline Code</a><br>',
+                    '<a href="http://www.github.com/diderote/chrome_chip">Pipeline Code</a><br>',
                     f'License: {license} <br> Author: {author}'
                     ])
 
@@ -264,6 +264,9 @@ def move_encode_files(exp):
 
 def clean_encode_folder(exp):
     # cleans encode folder of all unnecessary heavy files
+    if os.path.isdir(f'{exp.scratch}raw_data'):
+        shutil.rmtree(f'{exp.scratch}raw_data')
+
     encode_dir = f'{exp.scratch}ENCODE3/'
     folders = ['*/*/*/*/*fastq*', '*/*/*/*/*pr/', '*/*/*/*/*pr1/', '*/*/*/*/*pr2/', '*/*/*/*/call-choose_ctl/', '*/*/*/*/*bwa*', '*/*/*/*/*filter*']
     for folder in folders:
@@ -280,8 +283,7 @@ def submission_prepend(submission=None, source='chrome_chip', conda=None, module
     Prepends a string for a submission script
     Edit these defualts to optimize for another HPC or other environment
     '''
-    if len(module_list) > 0:
-        prepend = f'module rm {" ".join(module_list)}\n'
+    prepend = f'module rm {" ".join(module_list)}\n' if len(module_list) > 0 else ''
 
     if source:
         prepend += f'source activate {source}\n'

@@ -8,7 +8,7 @@ import pickle
 import yaml
 from IPython.display import HTML, display
 
-from chrome_chip.common import output, send_job, read_pd, close_out, make_folder, move_file, submission_prepend
+from chrome_chip.common import output, send_job, read_pd, close_out, make_folder, move_file, submission_prepend, clean_encode_folder, move_encode_files
 from chrome_chip.plot import plot_col
 
 
@@ -120,12 +120,11 @@ def final_qc(exp):
 
 def finish(exp):
     try:
-
-        if os.path.isdir(f'{exp.scratch}raw_data'):
-            rmtree(f'{exp.scratch}raw_data')
+        output('Cleaning and reorganizing ENCODE3 files...\n')
+        clean_encode_folder(exp)
+        move_encode_files(exp)
 
         output(f'\nConda environment file: {exp.job_folder}{exp.name}_environmnet.yml\nPackage versions: ', log_file=exp.log_file, run_main=exp.run_main)
-
         os.system(f'conda env export > {exp.job_folder}{exp.name}_environmnet.yml')
         with open(f'{exp.job_folder}{exp.name}_environmnet.yml', 'r') as fp:
             versions = yaml.load(fp)
@@ -140,9 +139,9 @@ def finish(exp):
             copy2(exp.log_file, scratch_log)
 
         '''for sample in exp.sample_files.values():
-             for file in exp.sample_files[sample].values():
-                 if exp.scratch in file:
-                     file.replace(exp.scratch, exp.out_dir)'''
+            for file in exp.sample_files[sample].values():
+                if exp.scratch in file:
+                    file.replace(exp.scratch, exp.out_dir)'''
 
         rmtree(exp.out_dir)
         copytree(exp.scratch, exp.out_dir)

@@ -294,6 +294,7 @@ def spike(exp):
 
     Align sequencing files to drosophila.
     '''
+    import pandas as pd
 
     spike_list = [sample for sample in exp.samples if 'none' not in exp.IPs.loc[exp.IPs.Sample_Name == sample, 'Spike Comparison'].tolist()]
 
@@ -314,10 +315,8 @@ def spike(exp):
                          f'bowtie2 -p 8 -x {exp.genome_indicies["spike_index"]} -U {spike_folder}{sample}.bwa_unaligned.fastq -S {spike_folder}{sample}.BDGP6.sam --very-sensitive-local -k 1 --no-unal',
                          f'samtools view -b -F 4 {spike_folder}{sample}.BDGP6.sam | samtools sort - > {spike_folder}{sample}.BDGP6.bam',
                          f'picard MarkDuplicates I={spike_folder}{sample}.BDGP6.bam O={spike_folder}{sample}.BDGP6.nodup.bam M={spike_folder}{sample}BDGP6.nodups.markdups.qc ASSUME_SORTED=TRUE VALIDATION_STRINGENCY=LENIENT REMOVE_DUPLICATES=true',
-                         f'samtools sort -n {spike_folder}{sample}.BDGP6.nodup.bam | samtools fastq - > {spike_folder}{sample}.BDGP6.nodup.fastq',
-                         f'bowtie2 -p 4 -x exp.genome_indicies["genome_bt2_index"] -U {spike_folder}{sample}.BDGP6.nodup.fastq -S {spike_folder}{sample}.TAR_GEN.BDGP6.sam --very-sensitive-local -k 1',
-                         f'samtools view -f 4 {spike_folder}{sample}.TAR_GEN.BDGP6.sam | samtools flagstat - > {spike_folder}{sample}.unique_drosophila.flagstat.qc',
-                         f'rm {spike_folder}{sample}.BDGP6.sam {spike_folder}{sample}.BDGP6.bam {spike_folder}{sample}.BDGP6.nodup.bam {spike_folder}{sample}.BDGP6.nodup.fastq {spike_folder}{sample}.hg38.BDGP6.sam'
+                         f'samtools flagstat {spike_folder}{sample}.BDGP6.nodup.bam - > {spike_folder}{sample}.unique_drosophila.flagstat.qc',
+                         f'rm {spike_folder}{sample}.BDGP6.sam {spike_folder}{sample}.BDGP6.nodup.bam {spike_folder}{sample}*.fastq'
                          ]
 
         exp.job_id.append(send_job(command_list=spike_command,
@@ -334,8 +333,22 @@ def spike(exp):
     # Wait for jobs to finish
     job_wait(exp.job_id, exp.log_file, exp.run_main)
 
+    spike_reads = pd.DataFrame(index=['spike_reads', 'genome_reads'])
+
     for sample in spike_list:
-        exp.sample_files[sample]['drosophila'] = f'{spike_folder}{sample}.unique_drosophila.flagstat.qc'
+        qc_file = f'{spike_folder}{sample}.unique_drosophila.flagstat.qc'
+        exp.sample_files[sample]['drosophila'] = qc_file
+
+        with open(qc_file, 'r') as fp:
+            spike_number = fp.read().split(' ')[0]
+
+        with open(exp.sample_files[sample]['nodup_flagstat']) as fp:
+            target_number = fp.read().split(' ')[0]
+
+        spike_reads[sample] = [spike_number, target_number]
+
+    exp.sample_files['spike_reads'] = spike_reads.T
+    output(f'Spike-in counts:\n {spike_reads.T}', log_file=exp.log_file, run_main=exp.run_main)
 
     output('Spike-in alignment jobs finished.', log_file=exp.log_file, run_main=exp.run_main)
 
