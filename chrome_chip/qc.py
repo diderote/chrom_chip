@@ -88,8 +88,7 @@ def final_qc(exp):
         fastqc_file = f'{exp.scratch}/QC/multiqc_data/multiqc_fastqc.txt'
         if os.path.isfile(fastqc_file):
             gen_stats = read_pd(f'{exp.scratch}/QC/multiqc_data/multiqc_general_stats.txt')
-            if exp.seq_type == 'paired':
-                samples = [f'{sample}_R2' for sample in exp.samples]
+            samples = exp.sample_df.Sample_Name.tolist()
             plot_col(df=gen_stats.loc[samples, 'FastQC_mqc-generalstats-fastqc-total_sequences'] / 1e6,
                      title='Total Sequencer Reads per Sample',
                      ylabel='Reads (Millions)',
