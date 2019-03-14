@@ -207,10 +207,13 @@ def job_wait(id_list, log_file, run_main=False):
 def move_file(file, dest, dest_type, log_file, run_main):
     if dest_type.lower() == 'folder':
         os.makedirs(dest, exist_ok=True)
-    if os.path.isfile(file):
-        shutil.move(file, dest)
+    if (os.path.isfile(file)) and (os.path.isfile(dest) is False):
+        try:
+            shutil.move(file, dest)
+        except FileNotFoundError:
+            print(f'{file} not found.')
     else:
-        output(f'{file} not found.  Cannot be moved to {dest}', log_file=log_file, run_main=run_main)
+        output(f'{file} cannot be moved to {dest}', log_file=log_file, run_main=run_main)
 
 
 def job_pending(job, log_file, run_main=False):
@@ -253,11 +256,9 @@ def move_encode_files(exp):
     for folder in mk_dict.values():
         make_folder(f'{encode_dir}{folder}')
 
-    for json in glob.glob(f'{encode_dir}*/*.json'):
-        move_file(json, f'{encode_dir}submission_jsons/', 'folder', exp.log_file, exp.run_main)
-
     for name, dct in exp.sample_files.items():
-        for file_type, dest_folder in mk_dict.items():
+        move_ = {file_type: dest_folder for file_type, dest_folder in mk_dict.items() if file_type in dct.keys()}
+        for file_type, dest_folder in move_.items():
             filename = f'{encode_dir}{dest_folder}/{name}_{dct[file_type]}' if file_type == 'qc_report' else f'{encode_dir}{dest_folder}/{dct[file_type]}'
             move_file(dct[file_type], filename, 'file', exp.log_file, exp.run_main)
 

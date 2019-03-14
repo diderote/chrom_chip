@@ -21,10 +21,8 @@ def overlaps(exp):
 
     out_dir = make_folder(f'{exp.scratch}/Overlaps/')
 
-    for comparison in exp.IPs['Comparison Name'].unique().tolist():
+    for comparison, overlap_list in exp.overlaps.items():
         comp_dir = make_folder(f'{out_dir}{comparison}_Overlap/')
-        overlap_list = exp.IPs[exp.IPs['Comparison Name'] == comparison]['Condition'].unique().tolist()
-
         peakset = 'overlap_peak' if 'none' in [exp.sample_files[condition]['idr_optimal_peak'] for condition in overlap_list] else 'idr_optimal_peak'
 
         if (peakset == 'overlap_peak') and ('none' in [exp.sample_files[condition]['overlap_peak'] for condition in overlap_list]):
@@ -38,7 +36,7 @@ def overlaps(exp):
 
         bed_dict = {condition: load_bedtool(exp.sample_files[condition][peakset]) for condition in overlap_list}
 
-        genome_list = exp.IPs.loc[exp.IPs['Comparison Name'] == comparison, 'Genome'].unique().tolist()
+        genome_list = exp.IPs.loc[exp.IPs['Condition'].isin(overlap_list), 'Genome'].unique().tolist()
         if len(genome_list) > 1:
             output(f'Cannot overlap peaks from different genomes for {condition}.', log_file=exp.log_file, run_main=exp.run_main)
             with open(f'{comp_dir}SKIPPING_OVERLAP.txt', 'w') as file:
@@ -64,6 +62,9 @@ def overlaps(exp):
 
 def annotation(exp):
 
+    from requests.exceptions import RetryError
+    from time import sleep
+
     out_dir = make_folder(f'{exp.scratch}/Annotated/')
 
     condition_list = exp.IPs['Condition'].unique().tolist()
@@ -83,7 +84,12 @@ def annotation(exp):
         cond_dir = make_folder(f'{out_dir}{condition}/')
         anno_results = annotate_peaks({condition: file}, cond_dir, genome, db='UCSC', check=False, log_file=exp.log_file, run_main=exp.run_main)[f'{condition}_annotated']
         anno_list = anno_results.SYMBOL.unique().tolist()
-        enrichr(anno_list, f'enrichr_{condition}', cond_dir, scan=None, max_terms=10, figsize=(12, 6), run_main=exp.run_main)
+
+        try:
+            sleep(1)
+            enrichr(anno_list, f'enrichr_{condition}', cond_dir, scan=None, max_terms=10, figsize=(12, 6), run_main=exp.run_main)
+        except RetryError:
+            output(f'No stable enrichr connection.  Skipping enrichr for {condition}.', log_file=exp.log_file, run_main=exp.run_main)
 
         exp.anno_results = {**exp.anno_results, **anno_results}
 

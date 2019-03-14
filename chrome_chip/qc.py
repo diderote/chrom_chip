@@ -8,7 +8,7 @@ import pickle
 import yaml
 from IPython.display import HTML, display
 
-from chrome_chip.common import output, send_job, read_pd, close_out, make_folder, move_file, submission_prepend, clean_encode_folder, move_encode_files
+from chrome_chip.common import output, send_job, read_pd, close_out, make_folder, submission_prepend, clean_encode_folder, move_encode_files
 from chrome_chip.plot import plot_col
 
 
@@ -77,12 +77,8 @@ def final_qc(exp):
     try:
         output(f'Beginning final qc: {datetime.now():%Y-%m-%d %H:%M:%S}\n', log_file=exp.log_file, run_main=exp.run_main)
 
-        os.system(f'multiqc {exp.scratch}* -o {exp.scratch}logs/')
-
-        if os.path.isdir(f'{exp.scratch}logs/multiqc_data'):
-            move_file(f'{exp.scratch}logs/multiqc_report.html', f'{exp.scratch}/QC/', 'folder', log_file=exp.log_file, run_main=exp.run_main)
-            copytree(f'{exp.scratch}logs/multiqc_data', f'{exp.scratch}/QC/multiqc_data')
-            rmtree(f'{exp.scratch}/logs/multiqc_data')
+        if os.path.isdir(f'{exp.scratch}QC/multiqc_data') is False:
+            os.system(f'multiqc {exp.scratch}* -o {exp.scratch}QC/')
 
         # Summary plots for FastQC data
         fastqc_file = f'{exp.scratch}/QC/multiqc_data/multiqc_fastqc.txt'
@@ -103,8 +99,9 @@ def final_qc(exp):
                      run_main=exp.run_main
                      )
 
-            copytree('colplot/', f'{exp.scratch}QC/colplot/')
-            rmtree('colplot')
+            if os.path.isdir('plots/'):
+                copytree('plots/', f'{exp.scratch}QC/plots/')
+                rmtree('plots')
 
         display(HTML('<h1>Final QC Summary</h1>'))
         display(HTML(f'{exp.scratch}/multiqc_report.html'))

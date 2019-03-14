@@ -296,9 +296,7 @@ def spike(exp):
     '''
     import pandas as pd
 
-    spike_list = [sample for sample in exp.samples if 'none' not in exp.IPs.loc[exp.IPs.Sample_Name == sample, 'Spike Comparison'].tolist()]
-
-    if len(spike_list) == 0:
+    if len(exp.spike_samples) == 0:
         output('Not processing Spike-ins', log_file=exp.log_file, run_main=exp.run_main)
         exp.tasks_complete.append('Spike')
         return exp
@@ -307,15 +305,15 @@ def spike(exp):
     spike_folder = make_folder(f'{exp.scratch}spike/')
     output('Processing samples with drosophila-spike in chromatin.', log_file=exp.log_file, run_main=exp.run_main)
 
-    for sample in spike_list:
+    for sample in exp.spike_samples:
         bam = exp.sample_files[sample]['bam']
 
         spike_command = [submission_prepend(),
                          f'samtools view -b -f 4 {bam} | samtools sort -n - | samtools fastq - > {spike_folder}{sample}.bwa_unaligned.fastq',
                          f'bowtie2 -p 8 -x {exp.genome_indicies["spike_index"]} -U {spike_folder}{sample}.bwa_unaligned.fastq -S {spike_folder}{sample}.BDGP6.sam --very-sensitive-local -k 1 --no-unal',
                          f'samtools view -b -F 4 {spike_folder}{sample}.BDGP6.sam | samtools sort - > {spike_folder}{sample}.BDGP6.bam',
-                         f'picard MarkDuplicates I={spike_folder}{sample}.BDGP6.bam O={spike_folder}{sample}.BDGP6.nodup.bam M={spike_folder}{sample}BDGP6.nodups.markdups.qc ASSUME_SORTED=TRUE VALIDATION_STRINGENCY=LENIENT REMOVE_DUPLICATES=true',
-                         f'samtools flagstat {spike_folder}{sample}.BDGP6.nodup.bam - > {spike_folder}{sample}.unique_drosophila.flagstat.qc',
+                         f'picard MarkDuplicates I={spike_folder}{sample}.BDGP6.bam O={spike_folder}{sample}.BDGP6.nodup.bam M={spike_folder}{sample}.BDGP6.nodups.markdups.qc ASSUME_SORTED=TRUE VALIDATION_STRINGENCY=LENIENT REMOVE_DUPLICATES=true',
+                         f'samtools flagstat {spike_folder}{sample}.BDGP6.nodup.bam > {spike_folder}{sample}.unique_drosophila.flagstat.qc',
                          f'rm {spike_folder}{sample}.BDGP6.sam {spike_folder}{sample}.BDGP6.nodup.bam {spike_folder}{sample}*.fastq'
                          ]
 
@@ -335,7 +333,7 @@ def spike(exp):
 
     spike_reads = pd.DataFrame(index=['spike_reads', 'genome_reads'])
 
-    for sample in spike_list:
+    for sample in exp.spike_samples:
         qc_file = f'{spike_folder}{sample}.unique_drosophila.flagstat.qc'
         exp.sample_files[sample]['drosophila'] = qc_file
 
@@ -347,7 +345,7 @@ def spike(exp):
 
         spike_reads[sample] = [spike_number, target_number]
 
-    exp.sample_files['spike_reads'] = spike_reads.T
+    exp.spike_reads = spike_reads.T
     output(f'Spike-in counts:\n {spike_reads.T}', log_file=exp.log_file, run_main=exp.run_main)
 
     output('Spike-in alignment jobs finished.', log_file=exp.log_file, run_main=exp.run_main)

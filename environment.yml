@@ -40,6 +40,7 @@ dependencies:
   - bioconductor-txdb.mmusculus.ucsc.mm10.knowngene=3.4.0=r341_3
   - bioconductor-xvector=0.20.0=r341h470a237_0
   - bioconductor-zlibbioc=1.26.0=r341h470a237_0
+  - bioconductor-org.hs.eg.db
   - bleach=1.4.2=py36_0
   - bowtie=1.2.2=py36h2d50403_1
   - bowtie2=2.3.4.3=py36h2d50403_0
