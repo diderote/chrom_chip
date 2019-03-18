@@ -259,7 +259,8 @@ def move_encode_files(exp):
     for name, dct in exp.sample_files.items():
         move_ = {file_type: dest_folder for file_type, dest_folder in mk_dict.items() if file_type in dct.keys()}
         for file_type, dest_folder in move_.items():
-            filename = f'{encode_dir}{dest_folder}/{name}_{dct[file_type]}' if file_type == 'qc_report' else f'{encode_dir}{dest_folder}/{dct[file_type]}'
+            new_name = dct[file_type].split('/')[-1]
+            filename = f'{encode_dir}{dest_folder}/{name}_{new_name}' if file_type == 'qc_report' else f'{encode_dir}{dest_folder}/{new_name}'
             move_file(dct[file_type], filename, 'file', exp.log_file, exp.run_main)
 
 

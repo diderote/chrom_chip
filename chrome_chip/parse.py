@@ -89,11 +89,12 @@ def parse_config(config_file, run_main=False):
     # Convert Comparisons to a column of lists, then make unique comparisons
     exp.IPs['Comparisons'] = exp.IPs.Comparisons.apply(lambda x: [x.replace(' ', '') for x in x.split(',')])
     exp.IPs['Comparison_names'] = exp.IPs[['Condition', 'Comparisons']].apply(lambda x: ['_v_'.join(sorted([x[0], y])) for y in x[1] if x[1][0] != 'none'], axis=1)
+    exp.overlaps = {name: name.split('_v_') for comparisons in exp.IPs.Comparison_names.tolist() for name in set(comparisons)}
 
-    comparisons = []
-    for comparison in exp.IPs.Comparison_names.tolist():
-        comparisons += comparison
-    exp.overlaps = {o_name: o_name.split('_v_') for o_name in set(comparisons)}
+    # Check that overlap conditions are valid conditions
+    for overlap_conditions in exp.overlaps.values():
+        if len(set(overlap_conditions) - set(exp.IPs.Condition.tolist())) > 0:
+            raise ValueError(f'One of the overlap conditions in ({" ".join(overlap_conditions)}) is not found in the sample conditions.')
 
     # Spike-in comparisons
     exp.IPs['Spike-in Comparisons'] = exp.IPs['Spike-in Comparisons'].apply(lambda x: [x.replace(' ', '') for x in x.split(',')])
@@ -101,6 +102,11 @@ def parse_config(config_file, run_main=False):
 
     sp_comparisons = [comparison for subls in exp.IPs.Spike_names.tolist() for comparison in subls]
     exp.spike_comparisons = {s_name: s_name.split('_v_') for s_name in set(sp_comparisons)}
+
+    # Check that spike conditions are valid conditions
+    for spike_conditions in exp.spike_comparisons.values():
+        if len(set(spike_conditions) - set(exp.IPs.Condition.tolist())) > 0:
+            raise ValueError(f'One of the spike-in conditions in ({" ".join(spike_conditions)}) is not found in the sample conditions.')
 
     spike_samples = [condition for subls in exp.spike_comparisons.values() for condition in subls]
     exp.spike_samples = exp.IPs[exp.IPs.Condition.isin(spike_samples)].Sample_Name.tolist()

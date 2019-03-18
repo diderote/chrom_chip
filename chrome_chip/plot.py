@@ -402,3 +402,48 @@ def extract_AQUAS_report_data(base_folder, out_folder='', histone=False, replica
         plot_col(results_df.loc[index], out=out_folder, title=f'{index}', ylabel=index.replace('_', ' '), plot_type=['violin', 'swarm'])
 
     return results_df
+
+
+def scale_factor(spike1_tags, spike2_tags, IP1_tags, IP2_tags):
+    '''
+    rep1 should be the lowest of number of tags in all samples in the comparison.
+    returns scaled ratio of IP2.
+    '''
+    correction_factor = int(spike2_tags) / int(spike1_tags)
+    scaled_IP2 = int(IP2_tags) / correction_factor
+    IP2_ratio = scaled_IP2 / int(IP1_tags)
+
+    return IP2_ratio
+
+
+def spike_in_plot(spike_df, sample_list, description, out_dir):
+    '''
+    df: spike-in df with spike-in reads counts in column 'spike_reads' and genome counts in 'genome_reads'.
+    sample_list:  list of samples to compare
+
+    '''
+    import seaborn as sns
+
+    df = spike_df.loc[sample_list].copy()
+    replicates = True if df.Replicate.unique.tolist() > 1 else False
+
+    base_idx = df.genome_reads.astype(int).idxmin()
+    base_spike = df.loc[base_idx, 'spike_reads']
+    base_genome = df.loc[base_idx, 'genome_reads']
+
+    df['Tag Ratio'] = df[['spike_reads', 'genome_reads']].apply(lambda x: scale_factor(base_spike, x[0], base_genome, x[1]))
+
+    sns.set(context='notebook', style='white', font='Arial')
+    if replicates:
+        sns.boxplot(x='Condition', y='Tag Ratio', data=df, palette='pastel')
+        sns.swarmplot(x='Condition', y='Ratio', hue='Replicate', data=df, size=8)
+    else:
+        sns.barplot(x='Condition', y='Ratio', data=df)
+
+    sns.mpl.pyplot.ylabel('Normalized Genome Read Ratio')
+    sns.mpl.pyplot.title(description.replace('_', ' '))
+    sns.despine()
+    sns.mpl.pyplot.savefig(f'{out_dir}{description.replaice(" ", "_")}.png')
+    sns.mpl.pyplot.savefig(f'{out_dir}{description.replaice(" ", "_")}.svg')
+
+    return f'{out_dir}{description.replaice(" ", "_")}.png'

@@ -6,8 +6,9 @@ import re
 import os
 from datetime import datetime
 
-from chrome_chip.common import output, send_job, job_wait, job_pending, glob_check, make_folder, glob_remove, submission_prepend
+from chrome_chip.common import output, send_job, job_wait, job_pending, glob_check, make_folder, glob_remove, submission_prepend, out_result
 from chrome_chip.preprocess import stage
+from chrome_chip.plot import spike_in_plot
 
 
 def encode3(exp):
@@ -56,7 +57,7 @@ def encode3(exp):
         chip_type = IPs[IPs.Condition == experiment]['ChIP Type'].unique().tolist()
         if len(chip_type) > 1:
             raise IOError('Cannot have more than one chip type (histone or TF) for a condition.')
-        chip_type = 'Histone' if chip_type[0].lower() == 'histone' else 'tf'
+        chip_type = 'histone' if chip_type[0].lower() == 'histone' else 'tf'
 
         json_file = {}
         json_file['chip.pipeline_type'] = chip_type
@@ -346,6 +347,17 @@ def spike(exp):
         spike_reads[sample] = [spike_number, target_number]
 
     exp.spike_reads = spike_reads.T
+    condition_dict = pd.Series(exp.sample_df.Condition.values, index=exp.sample_df.Sample_Name).to_dict()
+
+    exp.spike_reads['Replicate'] = [x.split('_')[-1] for x in exp.spike_reads.index.tolist()]
+    exp.spike_reads['Condition'] = [condition_dict[x] for x in exp.splike_reads.index.tolist()]
+
+    for name, spike_conditions in exp.spike_comparisons.items():
+        out_dir = make_folder(f'{exp.scratch}spike/{name}')
+        plot = spike_in_plot(exp.spike_reads, spike_conditions, name, out_dir)
+        out_result(plot, f'{name.replace("_", " ")} Spike-In Comparison', run_main=exp.run_main)
+        output(f'Spike-in comparison {name.replace("_", " ")} can be found here: {plot.replace(os.scratch, "")}')
+
     output(f'Spike-in counts:\n {spike_reads.T}', log_file=exp.log_file, run_main=exp.run_main)
 
     output('Spike-in alignment jobs finished.', log_file=exp.log_file, run_main=exp.run_main)
