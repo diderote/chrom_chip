@@ -59,44 +59,43 @@ def encode3(exp):
             raise IOError('Cannot have more than one chip type (histone or TF) for a condition.')
         chip_type = 'histone' if chip_type[0].lower() == 'histone' else 'tf'
 
-        json_file = {}
-        json_file['chip.pipeline_type'] = chip_type
-        json_file['chip.paired_end'] = seq_type
-        json_file['chip.genome_tsv'] = exp.genome_indicies['encode_tsv'][genome[0]]
-        json_file['chip.bwa.mem_mb'] = 30000
-        json_file['chip.macs2_mem_mb'] = 30000
-        json_file['chip.peak_caller'] = 'macs2'
-        json_file["chip.true_rep_only"] = False
-        json_file["chip.dup_marker"] = "picard"
-        json_file["chip.mapq_thresh"] = 30
-        json_file["chip.regex_filter_reads"] = "chrM"
-        json_file["chip.subsample_reads"] = 0
-        json_file["chip.ctl_subsample_reads"] = 0
-        json_file["chip.xcor_subsample_reads"] = 15000000
-        json_file["chip.keep_irregular_chr_in_bfilt_peak"] = False
-        json_file["chip.always_use_pooled_ctl"] = False
-        json_file["chip.ctl_depth_ratio"] = 1.2
-        json_file["chip.macs2_cap_num_peak"] = 500000
-        json_file["chip.pval_thresh"] = 0.01
-        json_file["chip.idr_thresh"] = 0.05
-        json_file["chip.bwa_cpu"] = 4
-        json_file["chip.bwa_mem_mb"] = 20000
-        json_file["chip.bwa_time_hr"] = 48
-        json_file["chip.filter_cpu"] = 2
-        json_file["chip.filter_mem_mb"] = 20000
-        json_file["chip.filter_time_hr"] = 24
-        json_file["chip.bam2ta_cpu"] = 2
-        json_file["chip.bam2ta_mem_mb"] = 10000
-        json_file["chip.bam2ta_time_hr"] = 6
-        json_file["chip.fingerprint_cpu"] = 2
-        json_file["chip.fingerprint_mem_mb"] = 12000
-        json_file["chip.fingerprint_time_hr"] = 6
-        json_file["chip.xcor_cpu"] = 2
-        json_file["chip.xcor_mem_mb"] = 16000
-        json_file["chip.xcor_time_hr"] = 24
-        json_file["chip.macs2_time_hr"] = 24
-        json_file["chip.spr_mem_mb"] = 16000
-
+        json_file = {'chip.pipeline_type': chip_type,
+                     'chip.paired_end': seq_type,
+                     'chip.genome_tsv': exp.genome_indicies['encode_tsv'][genome[0]],
+                     'chip.bwa.mem_mb': 30000,
+                     'chip.macs2_mem_mb': 30000,
+                     'chip.peak_caller': 'macs2',
+                     "chip.true_rep_only": False,
+                     "chip.dup_marker": "picard",
+                     "chip.mapq_thresh": 30,
+                     "chip.regex_filter_reads": "chrM",
+                     "chip.subsample_reads": 0,
+                     "chip.ctl_subsample_reads": 0,
+                     "chip.xcor_subsample_reads": 15000000,
+                     "chip.keep_irregular_chr_in_bfilt_peak": False,
+                     "chip.always_use_pooled_ctl": False,
+                     "chip.ctl_depth_ratio": 1.2,
+                     "chip.macs2_cap_num_peak": 500000,
+                     "chip.pval_thresh": 0.01,
+                     "chip.idr_thresh": 0.05,
+                     "chip.bwa_cpu": 4,
+                     "chip.bwa_mem_mb": 20000,
+                     "chip.bwa_time_hr": 48,
+                     "chip.filter_cpu": 2,
+                     "chip.filter_mem_mb": 20000,
+                     "chip.filter_time_hr": 24,
+                     "chip.bam2ta_cpu": 2,
+                     "chip.bam2ta_mem_mb": 10000,
+                     "chip.bam2ta_time_hr": 6,
+                     "chip.fingerprint_cpu": 2,
+                     "chip.fingerprint_mem_mb": 12000,
+                     "chip.fingerprint_time_hr": 6,
+                     "chip.xcor_cpu": 2,
+                     "chip.xcor_mem_mb": 16000,
+                     "chip.xcor_time_hr": 24,
+                     "chip.macs2_time_hr": 24,
+                     "chip.spr_mem_mb": 16000
+                     }
         bams = []
         ctl_bams = []
 
