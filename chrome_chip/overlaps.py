@@ -382,7 +382,7 @@ def enrichr(gene_list, description, out_dir, scan=None, max_terms=10, figsize=(1
         out_result(f'{out_dir}{nick}.{name}.enrichr.reports.png', f'Enrichr: {nick} for {description}', run_main=run_main)
 
     out_list = pd.DataFrame({'Gene Name': gene_list}, index=range(len(gene_list)))
-    out_list.to_excel(f'{out_dir}{description}_genes.excel', index=None)
+    out_list.to_excel(f'{out_dir}{description}_genes.xlsx', index=None)
 
 
 def heatmaps(exp):
