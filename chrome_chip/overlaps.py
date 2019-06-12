@@ -370,16 +370,20 @@ def enrichr(gene_list, description, out_dir, scan=None, max_terms=10, figsize=(1
         testscan = {**testscan, **scan}
 
     for nick, name in testscan.items():
-        gseapy.enrichr(gene_list=gene_list,
-                       figsize=figsize,
-                       top_term=max_terms,
-                       description=f'{description}_{nick}',
-                       gene_sets=name,
-                       outdir=out_dir,
-                       format='png'
-                       )
+        try:
+            gseapy.enrichr(gene_list=gene_list,
+                           figsize=figsize,
+                           top_term=max_terms,
+                           description=f'{description}_{nick}',
+                           gene_sets=name,
+                           outdir=out_dir,
+                           format='png'
+                           )
 
-        out_result(f'{out_dir}{nick}.{name}.enrichr.reports.png', f'Enrichr: {nick} for {description}', run_main=run_main)
+            out_result(f'{out_dir}{nick}.{name}.enrichr.reports.png', f'Enrichr: {nick} for {description}', run_main=run_main)
+
+        except:
+            output(f'Error in enrichr submission for {description} {nick}. Gene list is {len(gene_list)}.  Enrichr has problems > 6000 genes.', run_main=False)
 
     out_list = pd.DataFrame({'Gene Name': gene_list}, index=range(len(gene_list)))
     out_list.to_excel(f'{out_dir}{description}_genes.xlsx', index=None)
