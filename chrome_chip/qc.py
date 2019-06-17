@@ -8,7 +8,7 @@ import pickle
 import yaml
 from IPython.display import HTML, display
 
-from chrome_chip.common import output, send_job, read_pd, close_out, make_folder, submission_prepend, clean_encode_folder, move_encode_files
+from chrome_chip.common import output, send_job, read_pd, close_out, make_folder, submission_prepend, clean_encode_folder, extract_ENCODE_report_data
 from chrome_chip.plot import plot_col
 
 
@@ -118,7 +118,7 @@ def finish(exp):
     try:
         output('Cleaning and reorganizing ENCODE3 files...\n')
         clean_encode_folder(exp)
-        move_encode_files(exp)
+        extract_ENCODE_report_data(exp)
 
         output(f'\nConda environment file: {exp.job_folder}{exp.name}_environmnet.yml\nPackage versions: ', log_file=exp.log_file, run_main=exp.run_main)
         os.system(f'conda env export > {exp.job_folder}{exp.name}_environmnet.yml')
