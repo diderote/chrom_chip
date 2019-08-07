@@ -349,7 +349,7 @@ def spike(exp):
     condition_dict = pd.Series(exp.sample_df.Condition.values, index=exp.sample_df.Sample_Name).to_dict()
 
     exp.spike_reads['Replicate'] = [x.split('_')[-1] for x in exp.spike_reads.index.tolist()]
-    exp.spike_reads['Condition'] = [condition_dict[x] for x in exp.splike_reads.index.tolist()]
+    exp.spike_reads['Condition'] = [condition_dict[x] for x in exp.spike_reads.index.tolist()]
 
     for name, spike_conditions in exp.spike_comparisons.items():
         out_dir = make_folder(f'{exp.scratch}spike/{name}')
