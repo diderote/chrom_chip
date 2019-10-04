@@ -43,12 +43,14 @@ def encode3(exp):
         UMI_list = [x.lower() for x in IPs[IPs.Condition == experiment]['UMI'].unique().tolist()]
         if len(set(UMI_list)) > 1:
             raise IOError('All samples must be UMI processed or not for each condition.')
-        UMI = True if UMI_list[0].lower() == 'yes' else False
+        UMI = True if UMI_list[0] == 'yes' else False
 
         try:
             file_type = end_types[exp.sample_df[exp.sample_df.Condition == experiment]['Scratch_File1'].tolist()[0][-4:]]
         except KeyError:
             output(f"{exp.sample_df[exp.sample_df.Condition == experiment]['Scratch_File1'].tolist()[0]} not a valid file type for this pipeline.", log_file=exp.log_file, run_main=exp.run_main)
+
+        file_type = 'bam' if (UMI is True) & ('UMI' in exp.tasks_complete) else file_type
 
         genome = IPs[IPs.Condition == experiment]['Genome'].unique().tolist()
         if len(genome) > 1:
@@ -118,7 +120,7 @@ def encode3(exp):
             json_file[f'chip.ctl_bams'] = ctl_bams
 
         json_file['chip.align_only'] = True if UMI & (file_type == 'fastq') else False
-        json_file['chip.align_only'] = True if final_stage == 'align' else False
+        json_file['chip.align_only'] = True if final_stage == 'align' else json_file['chip.align_only']
 
         json_file['chip.no_dup_removal'] = True if UMI else False
         json_file['chip.title'] = f'{experiment}_postUMI_dedup' if UMI & (file_type == 'bam') else experiment
@@ -307,14 +309,16 @@ def spike(exp):
 
     for sample in exp.spike_samples:
         bam = exp.sample_files[sample]['bam']
+        spike_sample_folder = make_folder(f'{spike_folder}{sample}/')
 
         spike_command = [submission_prepend(),
-                         f'samtools view -b -f 4 {bam} | samtools sort -n - | samtools fastq - > {spike_folder}{sample}.bwa_unaligned.fastq',
-                         f'bowtie2 -p 8 -x {exp.genome_indicies["spike_index"]} -U {spike_folder}{sample}.bwa_unaligned.fastq -S {spike_folder}{sample}.BDGP6.sam --very-sensitive-local -k 1 --no-unal',
-                         f'samtools view -b -F 4 {spike_folder}{sample}.BDGP6.sam | samtools sort - > {spike_folder}{sample}.BDGP6.bam',
-                         f'picard MarkDuplicates I={spike_folder}{sample}.BDGP6.bam O={spike_folder}{sample}.BDGP6.nodup.bam M={spike_folder}{sample}.BDGP6.nodups.markdups.qc ASSUME_SORTED=TRUE VALIDATION_STRINGENCY=LENIENT REMOVE_DUPLICATES=true',
-                         f'samtools flagstat {spike_folder}{sample}.BDGP6.nodup.bam > {spike_folder}{sample}.unique_drosophila.flagstat.qc',
-                         f'rm {spike_folder}{sample}.BDGP6.sam {spike_folder}{sample}.BDGP6.nodup.bam {spike_folder}{sample}*.fastq'
+                         f'cd {spike_sample_folder}'
+                         f'samtools view -b -f 4 {bam} | samtools sort -n - | samtools fastq - > {spike_sample_folder}{sample}.bwa_unaligned.fastq',
+                         f'bowtie2 -p 8 -x {exp.genome_indicies["spike_index"]} -U {spike_sample_folder}{sample}.bwa_unaligned.fastq -S {spike_sample_folder}{sample}.BDGP6.sam --very-sensitive-local -k 1 --no-unal',
+                         f'samtools view -b -F 4 {spike_sample_folder}{sample}.BDGP6.sam | samtools sort - > {spike_sample_folder}{sample}.BDGP6.bam',
+                         f'picard MarkDuplicates I={spike_sample_folder}{sample}.BDGP6.bam O={spike_sample_folder}{sample}.BDGP6.nodup.bam M={spike_sample_folder}{sample}.BDGP6.nodups.markdups.qc ASSUME_SORTED=TRUE VALIDATION_STRINGENCY=LENIENT REMOVE_DUPLICATES=true',
+                         f'samtools flagstat {spike_sample_folder}{sample}.BDGP6.nodup.bam > {spike_sample_folder}{sample}.unique_drosophila.flagstat.qc',
+                         f'rm {spike_sample_folder}{sample}.BDGP6.sam {spike_sample_folder}{sample}.BDGP6.nodup.bam {spike_sample_folder}{sample}*.fastq'
                          ]
 
         exp.job_id.append(send_job(command_list=spike_command,
@@ -334,7 +338,8 @@ def spike(exp):
     spike_reads = pd.DataFrame(index=['spike_reads', 'genome_reads'])
 
     for sample in exp.spike_samples:
-        qc_file = f'{spike_folder}{sample}.unique_drosophila.flagstat.qc'
+        spike_sample_folder = f'{spike_folder}{sample}/'
+        qc_file = f'{spike_sample_folder}{sample}.unique_drosophila.flagstat.qc'
         exp.sample_files[sample]['drosophila'] = qc_file
 
         with open(qc_file, 'r') as fp:

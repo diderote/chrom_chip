@@ -95,6 +95,8 @@ def parse_config(config_file, run_main=False):
         comparisons += comparison
     exp.overlaps = {o_name: o_name.split('_v_') for o_name in set(comparisons)}
 
+    exp.IPs['UMI'] = [x.lower() for x in exp.IPs.UMI.tolist()]
+
     # Spike-in comparisons
     exp.IPs['Spike-in Comparisons'] = exp.IPs['Spike-in Comparisons'].apply(lambda x: [x.replace(' ', '') for x in x.split(',')])
     exp.IPs['Spike_names'] = exp.IPs[['Condition', 'Spike-in Comparisons']].apply(lambda x: ['_v_'.join(sorted([x[0], y])) for y in x[1] if x[1][0] != 'none'], axis=1)

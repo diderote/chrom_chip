@@ -425,25 +425,25 @@ def spike_in_plot(spike_df, sample_list, description, out_dir):
     import seaborn as sns
 
     df = spike_df.loc[sample_list].copy()
-    replicates = True if df.Replicate.unique.tolist() > 1 else False
+    replicates = True if len(df.Replicate.unique().tolist()) > 1 else False
 
     base_idx = df.genome_reads.astype(int).idxmin()
     base_spike = df.loc[base_idx, 'spike_reads']
     base_genome = df.loc[base_idx, 'genome_reads']
 
-    df['Tag Ratio'] = df[['spike_reads', 'genome_reads']].apply(lambda x: scale_factor(base_spike, x[0], base_genome, x[1]))
+    df['Tag Ratio'] = df[['spike_reads', 'genome_reads']].apply(lambda x: scale_factor(base_spike, x[0], base_genome, x[1]), axis=1)
 
     sns.set(context='notebook', style='white', font='Arial')
     if replicates:
         sns.boxplot(x='Condition', y='Tag Ratio', data=df, palette='pastel')
-        sns.swarmplot(x='Condition', y='Ratio', hue='Replicate', data=df, size=8)
+        sns.swarmplot(x='Condition', y='Tag Ratio', hue='Replicate', data=df, size=8)
     else:
-        sns.barplot(x='Condition', y='Ratio', data=df)
+        sns.barplot(x='Condition', y='Tag Ratio', data=df)
 
     sns.mpl.pyplot.ylabel('Normalized Genome Read Ratio')
     sns.mpl.pyplot.title(description.replace('_', ' '))
     sns.despine()
-    sns.mpl.pyplot.savefig(f'{out_dir}{description.replaice(" ", "_")}.png')
-    sns.mpl.pyplot.savefig(f'{out_dir}{description.replaice(" ", "_")}.svg')
+    sns.mpl.pyplot.savefig(f'{out_dir}{description.replace(" ", "_")}.png')
+    sns.mpl.pyplot.savefig(f'{out_dir}{description.replace(" ", "_")}.svg')
 
-    return f'{out_dir}{description.replaice(" ", "_")}.png'
+    return f'{out_dir}{description.replace(" ", "_")}.png'

@@ -255,7 +255,7 @@ def validated_run(task, func, exp):
 def clean_encode_folder(exp):
     encode_dir = f'{exp.scratch}ENCODE3/'
 
-    mk = ['bams', 'sample_peaks', 'nodup_bam', 'rep_peaks', 'reports', 'bws', 'jsons']
+    mk = ['bams', 'sample_peaks', 'nodup_bam', 'overlap_peaks', 'idr_peaks', 'reports', 'bws', 'jsons']
 
     for folder in mk:
         make_folder(f'{exp.scratch}{folder}')
