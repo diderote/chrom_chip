@@ -357,7 +357,16 @@ def extract_ENCODE_report_data(exp):
 
     reports = glob.glob(f'{base_folder}*report.html')
 
-    results_df = pd.DataFrame(index=['Percent_mapped', 'Filtered_Uniquely_Mapped_Reads', 'Fraction_Duplicated', 'S_JS_Distance', 'PBC1', 'RSC', 'Overlap_Optimal_Peak_Number', 'FrIP_IDR', 'IDR_Peak_Number'])
+    results_df = pd.DataFrame(index=['Percent_mapped',
+                                     'Filtered_Uniquely_Mapped_Reads',
+                                     'Fraction_Duplicated',
+                                     'S_JS_Distance',
+                                     'PBC1',
+                                     'RSC',
+                                     'Overlap_Optimal_Peak_Number',
+                                     'Overlap_Conservative_Peak_Number',
+                                     'FrIP_IDR',
+                                     'IDR_Peak_Number'])
 
     for file in reports:
         name = file.split('/')[-1].split('_qc_')[0]
@@ -366,15 +375,17 @@ def extract_ENCODE_report_data(exp):
         series['Percent_mapped'] = report[0].iloc[7, 1]
         series['Filtered_Uniquely_Mapped_Reads'] = report[3].iloc[5, 1]
         series['Fraction_Duplicated'] = report[1].iloc[7, 1]
-        series['S_JS_Distance'] = report[8].iloc[8, 1]
+        series['S_JS_Distance'] = report[7].iloc[8, 1]
         series['PBC1'] = report[2].iloc[6, 1]
         series['RSC'] = report[5].iloc[9, 1]
         series['Overlap_Optimal_Peak_Number'] = report[4].iloc[4, 1]
+        series['Overlap_Conservative_Peak_Number'] = report[4].iloc[5, 1]
 
         chip_type = exp.IPs[exp.IPs.Condition == name]['ChIP Type'].unique().tolist()
         if chip_type is 'tf':
             series['FrIP_IDR'] = report[7].iloc[1, 1]
             series['IDR_Peak_Number'] = report[4].iloc[4, 2]
+            series['S_JS_Distance'] = report[8].iloc[8, 1]
         results_df[name] = series
 
     for index in results_df.index.tolist():

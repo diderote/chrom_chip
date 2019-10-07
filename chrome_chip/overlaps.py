@@ -57,6 +57,8 @@ def overlaps(exp):
 
     output(f'Overlap analysis complete: {datetime.now():%Y-%m-%d %H:%M:%S}\n', log_file=exp.log_file, run_main=exp.run_main)
 
+    exp.tasks_complete.append('Overlaps')
+
     return exp
 
 
