@@ -95,6 +95,8 @@ def annotation(exp):
 
         exp.anno_results = {**exp.anno_results, **anno_results}
 
+    exp.tasks_complete.append('Annotations')
+
     return exp
 
 
