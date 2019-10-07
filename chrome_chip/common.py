@@ -124,7 +124,7 @@ def glob_check(path):
 
 def globber(file):
     g = glob.glob(file)
-    return '' if g is None else g[0]
+    return '' if len(g) == 0 else g[0]
 
 
 def bed2df(bed):
