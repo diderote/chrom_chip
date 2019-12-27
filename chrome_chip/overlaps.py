@@ -10,7 +10,7 @@ from rpy2.robjects.packages import importr
 from rpy2.robjects import pandas2ri
 import gseapy
 
-from chrome_chip.plot import plot_venn2, plot_venn2_set, plot_venn3_counts, plot_venn3_set
+from chrome_chip.plot import plot_venn2, plot_venn2_set, plot_venn3_counts, plot_venn3_set, enrichr_barplot
 from chrome_chip.common import out_result, rout_write, output, make_folder, load_bedtool, read_pd, bed2df
 
 
@@ -89,7 +89,7 @@ def annotation(exp):
 
         try:
             sleep(1)
-            enrichr(anno_list, f'enrichr_{condition}', cond_dir, scan=None, max_terms=10, figsize=(12, 6), run_main=exp.run_main)
+            enrichr(anno_list, f'enrichr_{condition}', cond_dir, scan=None, max_terms=10, figsize=(12, 6), run_main=exp.run_main, log_file=exp.log_file)
         except RetryError:
             output(f'No stable enrichr connection.  Skipping enrichr for {condition}.', log_file=exp.log_file, run_main=exp.run_main)
 
@@ -339,7 +339,60 @@ def overlap_three(bed_dict, overlap_name, out_folder, log_file, genome=None, run
     return return_sorted_dict if genome is None else {**return_sorted_dict, **return_dict}
 
 
-def enrichr(gene_list, description, out_dir, scan=None, max_terms=10, figsize=(12, 6), run_main=False):
+def post_genes(gene_list, description):
+    '''
+    posts gene list to Enricr
+    
+    Returns
+    -------
+    dictionary: userListId, shortId
+    
+    '''
+    import json
+    import requests
+    
+    ENRICHR_URL = 'http://amp.pharm.mssm.edu/Enrichr/addList'
+    genes_str = '\n'.join(gene_list)
+    description = description
+    payload = {'list': (None, genes_str),
+               'description': (None, description)
+              }
+
+    response = requests.post(ENRICHR_URL, files=payload)
+    if not response.ok:
+        raise Exception('Error analyzing gene list')
+
+    return json.loads(response.text)
+
+
+def enrich(userListId, filename, gene_set_library):
+    '''
+    
+    Returns
+    -------
+    Text file of enrichment results
+    
+    '''
+    import requests
+    
+    ENRICHR_URL = 'http://amp.pharm.mssm.edu/Enrichr/export'
+    query_string = '?userListId=%s&filename=%s&backgroundType=%s'
+
+    url = ENRICHR_URL + query_string % (userListId, filename, gene_set_library)
+    response = requests.get(url, stream=True)
+
+    with open(filename, 'wb') as f:
+        for chunk in response.iter_content(chunk_size=1024): 
+            if chunk:
+                f.write(chunk)
+
+    if not response.ok:
+        raise Exception('Enrichr gene list enrichment error')
+
+    return response
+
+
+def enrichr(gene_list, description, out_dir, log_file, scan=None, max_terms=20, figsize=(12, 6), run_main=False):
     '''
     Performs GO Molecular Function, GO Biological Process and KEGG enrichment on a gene list.
     Uses enrichr.
@@ -361,36 +414,23 @@ def enrichr(gene_list, description, out_dir, scan=None, max_terms=10, figsize=(1
 
     '''
 
-    out_dir = make_folder(out_dir)
+    gene_sets = ['KEGG_2016', 'GO_Biological_Process_2018','ENCODE_and_ChEA_Consensus_TFs_from_ChIP-X',
+                 'ChEA_2016','OMIM_Disease'
+                ]
 
-    testscan = {'KEGG': 'KEGG_2016',
-                'GO_biological_process': 'GO_Biological_Process_2017b',
-                'ChIP-X_Consensus_TFs': 'ENCODE_and_ChEA_Consensus_TFs_from_ChIP-X',
-                'ChEA': 'ChEA_2016',
-                'OMIM_Disease': 'OMIM_Disease'
-                }
+    gene_sests = scan if scan is not None else gene_sets
 
-    if isinstance(scan, dict):
-        testscan = {**testscan, **scan}
-
-    for nick, name in testscan.items():
+    for gene_set in gene_sets:
         try:
-            gseapy.enrichr(gene_list=gene_list,
-                           figsize=figsize,
-                           top_term=max_terms,
-                           description=f'{description}_{nick}',
-                           gene_sets=name,
-                           outdir=out_dir,
-                           format='png'
-                           )
+            filename=f'{out_dir}{description}_{gene_set}.enrichr.txt'
 
-            out_result(f'{out_dir}{nick}.{name}.enrichr.reports.png', f'Enrichr: {nick} for {description}', run_main=run_main)
-
+            post = post_genes(genes, description)
+            get = enrich(post['userListId'], filename, gene_library)
+            png = enrichr_barplot(filename=filename, gene_library=gene_sets, out_dir=out_dir, 
+                                  description=description, figsize=figsize, max_n=max_terms)
+            out_result(png, f'Enrichr: {gene_set} for {description}', run_main=run_main)
         except:
-            output(f'Error in enrichr submission for {description} {nick}. Gene list is {len(gene_list)}.  Enrichr has problems > 6000 genes.', run_main=False)
-
-    out_list = pd.DataFrame({'Gene Name': gene_list}, index=range(len(gene_list)))
-    out_list.to_excel(f'{out_dir}{description}_genes.xlsx', index=None)
+            output(f'Error in enrichr for {description} with {gene_set}. Skipping... \n', log_file=log_file, run_main=run_main)
 
 
 def heatmaps(exp):

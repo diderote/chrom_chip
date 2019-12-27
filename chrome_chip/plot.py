@@ -452,3 +452,65 @@ def spike_in_plot(spike_df, sample_list, description, out_dir):
     sns.mpl.pyplot.savefig(f'{out_dir}{description.replace(" ", "_")}.svg')
 
     return f'{out_dir}{description.replace(" ", "_")}.png'
+
+
+def enrichr_barplot(filename, gene_library, out_dir, description, max_n=20, 
+                    q_thresh=0.05, color='slategray', figsize=(8,6)):
+    '''
+    Saves barplot from Enrichr results
+    
+    Paramaters
+    ----------
+    filename: enrichr response file
+    gene_library: gene set library to test
+    out_dir: result output folder
+    description: sample or gene set source name
+    max_n: max number of significant to display
+    q_thresh: qvalue threshold
+    color: plot color
+    
+    Return
+    ------
+    None
+    
+    '''
+    e_df = pd.read_csv(filename, header=0, sep="\t").sort_values(by=['Adjusted P-value']).head(max_n)
+    e_df['Clean_term'] = e_df.Term.apply(lambda x: x.split("_")[0])
+    e_df['log_q'] = -np.log10(e_df['Adjusted P-value'])
+
+    plt.clf()
+    sns.set(context='paper', font='Arial', font_scale=1.2, style='white', 
+            rc={'figure.dpi': 300, 'figure.figsize': figsize}
+           )
+
+    fig, ax = plt.subplots()
+    fig.suptitle(f'{description} {gene_library.replace("_", " ")} enrichment\n(q<{q_thresh}, max {max_n})')
+
+    sig = e_df[e_df['Adjusted P-value'] <= q_thresh].copy() 
+
+    if len(sig) > 0:
+        g = sns.barplot(data=sig, x='log_q', y='Clean_term', color=color, ax=ax)
+        plt.xlabel('q-value (-log$_{10}$)')
+        plt.ylabel('Enrichment Term')
+        ymin, ymax = g.get_ylim()
+        g.vlines(x=-np.log10(q_thresh), ymin=ymin, ymax=ymax, colors='k', 
+                 linestyles='dashed', label=f'q = {q_thresh}')
+        g.legend()
+        sns.despine()
+    else:
+        ax.text(0.5, 0.5, 'No Significant Enrichments.',
+                horizontalalignment='center',
+                verticalalignment='center',
+                transform=ax.transAxes
+                )
+    try:
+        plt.tight_layout(h_pad=1, w_pad=1)
+    except ValueError:
+        pass
+
+    plt.subplots_adjust(top=0.88)
+    file = f'{out_dir}{description}_{gene_library}_enrichr.barplot.png'
+    fig.savefig(file, dpi=300)
+    plt.close()
+
+    return file
