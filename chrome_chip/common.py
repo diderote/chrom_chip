@@ -331,7 +331,7 @@ def clean_encode_folder(exp):
 
     folders = ['ENCODE3', 'raw_data']
     for folder in folders:
-        glob_folders = glob.glob(f'{encode_dir}{folder}')
+        glob_folders = glob.glob(f'{exp.scratch}{folder}')
         for glob_folder in glob_folders:
             if os.path.isdir(glob_folder):
                 shutil.rmtree(glob_folder)
@@ -371,21 +371,25 @@ def extract_ENCODE_report_data(exp):
     for file in reports:
         name = file.split('/')[-1].split('_qc_')[0]
         report = pd.read_html(file)
+        if len(report) < 6:
+            output(f'Skipping {name} from qc plots.', exp.log_file, exp.run_main)
+            continue
         series = pd.Series()
         series['Percent_mapped'] = report[0].iloc[7, 1]
         series['Filtered_Uniquely_Mapped_Reads'] = report[3].iloc[5, 1]
         series['Fraction_Duplicated'] = report[1].iloc[7, 1]
-        series['S_JS_Distance'] = report[7].iloc[8, 1]
         series['PBC1'] = report[2].iloc[6, 1]
         series['RSC'] = report[5].iloc[9, 1]
         series['Overlap_Optimal_Peak_Number'] = report[4].iloc[4, 1]
         series['Overlap_Conservative_Peak_Number'] = report[4].iloc[5, 1]
 
         chip_type = exp.IPs[exp.IPs.Condition == name]['ChIP Type'].unique().tolist()
-        if chip_type is 'tf':
+        if 'tf' in [x.lower() for x in chip_type]:
             series['FrIP_IDR'] = report[7].iloc[1, 1]
             series['IDR_Peak_Number'] = report[4].iloc[4, 2]
             series['S_JS_Distance'] = report[8].iloc[8, 1]
+        else:
+            series['S_JS_Distance'] = report[7].iloc[8, 1]
         results_df[name] = series
 
     for index in results_df.index.tolist():
