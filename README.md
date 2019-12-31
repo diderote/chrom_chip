@@ -1,7 +1,7 @@
 # LSF ChIPseq pipeline
 
 This pipeline is a wrapper around the Kundaje lab chipseq_pipeline2 for use with Pegasus at SCCC at the University of Miami.
-https://github.com/kundajelab/chipseq_pipeline
+https://github.com/ENCODE-DCC/chip-seq-pipeline2.  (Optimized for commit 83789e5. Can't guarantee updated versions.)
 
 ## Instructions for installation:
 
@@ -10,13 +10,14 @@ https://github.com/kundajelab/chipseq_pipeline
 2. Install the ENCODE3 chip-seq-pipeline2:
 	- git clone https://github.com/ENCODE-DCC/chip-seq-pipeline2
 	- cd chip-seq-pipeline2
+	- Optional: git checkout 83789e5
 	- bash conda/uninstall_dependencies.sh
 	- bash conda/install_dependencies.sh
 3. Build relevant genomic indicies:
 	- bash conda/build_genome_data.sh [hg38/mm10/hg19] /path/to/built/genomes/
 4. Install additional dependencies:
 	- module rm python share-rpms65
-	- conda env create -f environment.yml
+	- conda env create -f chrome_chip_env.yml
 	- (soon: conda install -n chrome_chip -c diderote chrome_chip)
 5. OPTIONAL SETUP:
 	- To allow for contamination screen (fastq screen):
@@ -50,8 +51,8 @@ This pipline handles processing and analyses for ChIPseq data on the University 
 2. Fastq quality measurements
 3. Adapter and quality fastq trimming
 4. Spike-in alignment and analysis (if applicable)
-5. Aquas pipeline:
-	- Genome alignment using BWA
+5. ENCODE3 pipeline:
+	- Genome alignment using BWA (newer versions use bowtie2)
 	- Signal to Noise measurements
 	- PCR Bottleneck measurements
 	- Cross-correlation analysis
@@ -65,7 +66,9 @@ This pipline handles processing and analyses for ChIPseq data on the University 
 9. Overlap analysis
 9. Peak annotation
 10. Enrichment analysis of annotated peaks and overlapped peaks (enrichr: KEGG, GO Biological Process, ChIP-X, ChEA, OMIM Disease)
+Future tasks:
 11. Differential binding analysis (using spike-in or not)
+12. Lowess normlization of bigwig signal by spike-in
 
-The pipeline handles multiple entry/exit points and can parse complex experimental designs and compensation types for DE.  In case of error, the pipeline restarts from the last completed step. Progress is tracked in a .log file in the output directory.
+The pipeline handles multiple entry/exit points.  In case of error, the pipeline restarts from the last completed step. Progress is tracked in a .log file in the output directory or a jupyter notebook using papermill.
 
