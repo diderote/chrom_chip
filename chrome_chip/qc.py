@@ -118,7 +118,7 @@ def finish(exp):
     try:
         output('Cleaning and reorganizing ENCODE3 files...\n')
         clean_encode_folder(exp)
-        extract_ENCODE_report_data(exp)
+        exp.results_df = extract_ENCODE_report_data(exp)
 
         output(f'\nConda environment file: {exp.job_folder}{exp.name}_environmnet.yml\nPackage versions: ', log_file=exp.log_file, run_main=exp.run_main)
         os.system(f'conda env export > {exp.job_folder}{exp.name}_environmnet.yml')

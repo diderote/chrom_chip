@@ -157,6 +157,61 @@ def encode3(exp):
     # Wait for jobs to finish
     job_wait(exp.job_id, exp.log_file)
 
+    # Check fraglength and resubmit with set 200 fraglen for macs2 if xcor error
+    for experiment in IPs.Condition.unique().tolist():
+        rep_number = len(exp.IPs[exp.IPs.Condition == experiment])
+        
+        frag_list = []
+
+        for rep in range(rep_number):
+            file = globber(f'{exp.scratch}ENCODE3/{experiment}/cromwell-executions/chip/*/call-xcor/shard-{rep}/execution/*fraglen.txt')
+            with open(file, 'r') as f:
+                frag_list.append(f.read().split()[0])
+
+        if '-' in [x[0] for x in frag_list]:
+            output(f'Xcor failed for {experiment}.  Resubmitting with fragment length set to 200 for failed sample/s', 
+                   log_file=exp.log_file, run_main=exp.run_main)
+
+            frag_list = [x if x[0] != '-' else '200' for x in frag_list]
+            exp_dir = f'{exp.scratch}ENCODE3/{experiment}/'
+            encode_file = f'{exp_dir}{experiment}_ENCODE3.json'
+
+            with open(encode_file, 'r') as file:
+                json_file = json.load(file)
+
+            json_file["chip.fraglen"] = frag_list
+
+            resubmit_file = f'{exp_dir}/{experiment}_ENCODE3_setfraglenth.json'
+            with open(resubmit_file, 'w') as file:
+                json.dump(json_file, file, indent=4, sort_keys=True)
+
+            pythonpath = shutil.which('python')
+            miniconda = [x for x in pythonpath.split('/') if 'miniconda' in x]
+            cromwell_jar = re.sub(r'{}/.*'.format(miniconda), '{}/envs/chrome_chip/share/cromwell/cromwell.jar'.format(miniconda), pythonpath)
+            jar = cromwell_jar if os.path.isfile(cromwell_jar) else '~/miniconda3/envs/chrome_chip/share/cromwell/cromwell.jar'
+
+            command_list = [submission_prepend(source='encode-chip-seq-pipeline'),
+                            f'cd {exp_dir}',
+                            f'java -jar -Dconfig.file={exp.encode3_folder}backends/backend.conf -Dbackend.default=Local {jar} run {exp.encode3_folder}chip.wdl -i {resubmit_file}'
+                            ]
+
+            sent_job = send_job(command_list=command_list,
+                                job_name=f"{experiment}_ENCODE3_resubmission",
+                                job_log_folder=exp.job_folder,
+                                q='bigmem',
+                                mem=35000,
+                                log_file=exp.log_file,
+                                project=exp.project,
+                                cores=1,
+                                run_main=exp.run_main
+                                )
+
+            exp.job_id.append(sent_job)
+            job_pending(sent_job, exp.log_file)
+
+    # Wait for jobs to finish
+    job_wait(exp.job_id, exp.log_file)
+
     exp = encode_results(exp)
 
     exp.tasks_complete.append('ENCODE3')
