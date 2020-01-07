@@ -122,11 +122,6 @@ def glob_check(path):
     return 'none' if len(file) == 0 else file[0]
 
 
-def globber(file):
-    g = glob.glob(file)
-    return '' if len(g) == 0 else g[0]
-
-
 def bed2df(bed):
     if len(bed) == 0:
         return None
@@ -264,39 +259,39 @@ def clean_encode_folder(exp):
         crom_dir = f'{encode_dir}{sample}/cromwell-executions/chip/*/'
         rep_number = len(exp.IPs[exp.IPs.Condition == sample])
 
-        rename(globber(f'{crom_dir}call-reproducibility_idr/execution/optimal_peak.narrowPeak.gz'),
+        rename(glob_check(f'{crom_dir}call-reproducibility_idr/execution/optimal_peak.narrowPeak.gz'),
                f'{exp.scratch}idr_peaks/{sample}.idr.optimal_peak.narrowPeak.gz')
-        rename(globber(f'{crom_dir}call-reproducibility_idr/execution/conservative_peak.narrowPeak.gz'),
+        rename(glob_check(f'{crom_dir}call-reproducibility_idr/execution/conservative_peak.narrowPeak.gz'),
                f'{exp.scratch}idr_peaks/{sample}.idr.conservative_peak.narrowPeak.gz')
-        rename(globber(f'{crom_dir}call-reproducibility_overlap/execution/optimal_peak.narrowPeak.gz'),
+        rename(glob_check(f'{crom_dir}call-reproducibility_overlap/execution/optimal_peak.narrowPeak.gz'),
                f'{exp.scratch}overlap_peaks/{sample}.overlap.optimal_peak.narrowPeak.gz')
-        rename(globber(f'{crom_dir}call-reproducibility_overlap/execution/conservative_peak.narrowPeak.gz'),
+        rename(glob_check(f'{crom_dir}call-reproducibility_overlap/execution/conservative_peak.narrowPeak.gz'),
                f'{exp.scratch}overlap_peaks/{sample}.overlap.conservative_peak.narrowPeak.gz')
-        rename(globber(f'{crom_dir}call-qc_report/execution/qc.html'), f'{exp.scratch}reports/{sample}_qc_report.html')
-        rename(globber(f'{encode_dir}{sample}/*.json'), f'{exp.scratch}jsons/{sample}_ENCODE3.json')
+        rename(glob_check(f'{crom_dir}call-qc_report/execution/qc.html'), f'{exp.scratch}reports/{sample}_qc_report.html')
+        rename(glob_check(f'{encode_dir}{sample}/*.json'), f'{exp.scratch}jsons/{sample}_ENCODE3.json')
 
         for rep in range(rep_number):
             n = rep + 1
-            rename(globber(f'{crom_dir}call-macs2/shard-{rep}/execution/*fc.signal.bigwig'),
+            rename(glob_check(f'{crom_dir}call-macs2/shard-{rep}/execution/*fc.signal.bigwig'),
                    f'{exp.scratch}bws/{sample}_Rep{n}.fc.signal.bigwig')
-            rename(globber(f'{crom_dir}call-macs2/shard-{rep}/execution/*bfilt.narrowPeak.gz'),
+            rename(glob_check(f'{crom_dir}call-macs2/shard-{rep}/execution/*bfilt.narrowPeak.gz'),
                    f'{exp.scratch}sample_peaks/{sample}_Rep{n}.bfilt.narrowPeak.gz')
-            rename(globber(f'{crom_dir}call-macs2/shard{rep}/execution/*broadPeak'),
+            rename(glob_check(f'{crom_dir}call-macs2/shard{rep}/execution/*broadPeak'),
                    f'{exp.scratch}sample_peaks/{sample}_Rep{n}.broadPeak')
-            rename(globber(f'{crom_dir}call-filter/shard-{rep}/execution/*.nodup.bam'),
+            rename(glob_check(f'{crom_dir}call-filter/shard-{rep}/execution/*.nodup.bam'),
                    f'{exp.scratch}nodup_bam/{sample}_Rep{n}.nodup.bam')
-            rename(globber(f'{crom_dir}call-filter/shard-{rep}/execution/*.nodup.bam.bai'),
+            rename(glob_check(f'{crom_dir}call-filter/shard-{rep}/execution/*.nodup.bam.bai'),
                    f'{exp.scratch}nodup_bam/{sample}_Rep{n}.nodup.bam.bai')
-            rename(globber(f'{crom_dir}call-filter_ctl/shard-{rep}/execution/*nodup.bam'),
+            rename(glob_check(f'{crom_dir}call-filter_ctl/shard-{rep}/execution/*nodup.bam'),
                    f'{exp.scratch}nodup_bam/{sample}_Rep{n}_background.nodup.bam')
-            rename(globber(f'{crom_dir}call-filter_ctl/shard-{rep}/execution/*nodup.bam.bai'),
+            rename(glob_check(f'{crom_dir}call-filter_ctl/shard-{rep}/execution/*nodup.bam.bai'),
                    f'{exp.scratch}nodup_bam/{sample}_Rep{n}_background.nodup.bam.bai')
-            rename(globber(f'{crom_dir}call-bwa/shard-{rep}/execution/*.bam'), f'{exp.scratch}bams/{sample}_Rep{n}.bam')
-            rename(globber(f'{crom_dir}call-bwa/shard-{rep}/execution/*.bam.bai'), f'{exp.scratch}bams/{sample}_Rep{n}.bam.bai')
-            rename(globber(f'{crom_dir}call-bwa_ctl/shard-{rep}/execution/*.bam'), f'{exp.scratch}bams/{sample}_Rep{n}_background.bam')
-            rename(globber(f'{crom_dir}call-bwa_ctl/shard-{rep}/execution/*.bam.bai'), f'{exp.scratch}bams/{sample}_Rep{n}_background.bam.bai')
+            rename(glob_check(f'{crom_dir}call-bwa/shard-{rep}/execution/*.bam'), f'{exp.scratch}bams/{sample}_Rep{n}.bam')
+            rename(glob_check(f'{crom_dir}call-bwa/shard-{rep}/execution/*.bam.bai'), f'{exp.scratch}bams/{sample}_Rep{n}.bam.bai')
+            rename(glob_check(f'{crom_dir}call-bwa_ctl/shard-{rep}/execution/*.bam'), f'{exp.scratch}bams/{sample}_Rep{n}_background.bam')
+            rename(glob_check(f'{crom_dir}call-bwa_ctl/shard-{rep}/execution/*.bam.bai'), f'{exp.scratch}bams/{sample}_Rep{n}_background.bam.bai')
 
-    folders = ['ENCODE3', 'raw_data']
+    folders = ['raw_data']
     for folder in folders:
         glob_folders = glob.glob(f'{exp.scratch}{folder}')
         for glob_folder in glob_folders:

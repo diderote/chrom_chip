@@ -158,13 +158,13 @@ def encode3(exp):
     job_wait(exp.job_id, exp.log_file)
 
     # Check fraglength and resubmit with set 200 fraglen for macs2 if xcor error
-    for experiment in IPs.Condition.unique().tolist():
+    for experiment in exp.IPs.Condition.unique().tolist():
         rep_number = len(exp.IPs[exp.IPs.Condition == experiment])
         
         frag_list = []
 
         for rep in range(rep_number):
-            file = globber(f'{exp.scratch}ENCODE3/{experiment}/cromwell-executions/chip/*/call-xcor/shard-{rep}/execution/*fraglen.txt')
+            file = glob_check(f'{exp.scratch}ENCODE3/{experiment}/cromwell-executions/chip/*/call-xcor/shard-{rep}/execution/*fraglen.txt')
             with open(file, 'r') as f:
                 frag_list.append(f.read().split()[0])
 
