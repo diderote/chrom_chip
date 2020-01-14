@@ -78,6 +78,10 @@ def parse_config(config_file, run_main=False):
     exp.sample_df['Sample_Name'] = exp.sample_df.Condition + '_' + exp.sample_df.Replicate
     output(f'Processing samples:\n{exp.sample_df}', log_file=exp.log_file, run_main=run_main)
 
+    #Lowercase Final Stage
+    exp.sample_df['Aligner'] = exp.sample_df['Aligner'].str.lower()
+    exp.sample_df['Peak Caller'] = exp.sample_df['Peak Caller'].str.lower()
+
     # Paired
     exp.sample_df['paired'] = [x != 'none' for x in exp.sample_df.File2.tolist()]
 

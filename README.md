@@ -1,7 +1,6 @@
-# LSF ChIPseq pipeline
+# chrome chip pipeline
 
-This pipeline is a wrapper around the Kundaje lab chipseq_pipeline2 for use with Pegasus at SCCC at the University of Miami.
-https://github.com/ENCODE-DCC/chip-seq-pipeline2.  (Optimized for commit 83789e5. Can't guarantee updated versions.)
+This pipeline is based on ENCODE3 specifications for ChIPseq Analysis.
 
 ## Instructions for installation:
 
@@ -10,11 +9,12 @@ https://github.com/ENCODE-DCC/chip-seq-pipeline2.  (Optimized for commit 83789e5
 2. Install the ENCODE3 chip-seq-pipeline2:
 	- git clone https://github.com/ENCODE-DCC/chip-seq-pipeline2
 	- cd chip-seq-pipeline2
-	- Optional: git checkout 83789e5
-	- bash conda/uninstall_dependencies.sh
-	- bash conda/install_dependencies.sh
+	- Optional: git checkout a7fd35c
+	- bash [conda/scripts]/install_dependencies.sh
 3. Build relevant genomic indicies:
-	- bash conda/build_genome_data.sh [hg38/mm10/hg19] /path/to/built/genomes/
+	- bash [conda/scripts]/build_genome_data.sh [hg38/mm10/hg19] /path/to/built/genomes/
+4. Download chrome_chip:
+	- git clone https://github.com/diderte/chrome_chip
 4. Install additional dependencies:
 	- module rm python share-rpms65
 	- conda env create -f chrome_chip_env.yml
@@ -68,7 +68,7 @@ This pipline handles processing and analyses for ChIPseq data on the University 
 10. Enrichment analysis of annotated peaks and overlapped peaks (enrichr: KEGG, GO Biological Process, ChIP-X, ChEA, OMIM Disease)
 Future tasks:
 11. Differential binding analysis (using spike-in or not)
-12. Lowess normlization of bigwig signal by spike-in
+12. Lowess normlization of bigwig signal by spike-in. (lowSpike)
 
 The pipeline handles multiple entry/exit points.  In case of error, the pipeline restarts from the last completed step. Progress is tracked in a .log file in the output directory or a jupyter notebook using papermill.
 

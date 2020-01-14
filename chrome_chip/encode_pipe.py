@@ -38,7 +38,18 @@ def encode3(exp):
             raise IOError('Pipeline cannot handle more than 6 replicates.')
 
         seq_type = False if 'none' in IPs[IPs.Condition == experiment]['File2'].tolist() else True
-        final_stage = 'align' if 'align' in IPs[IPs.Condition == experiment]['Final Stage'].tolist() else 'all'
+        
+        aligner = IPs[IPs.Condition == experiment]['Aligner'].unique().tolist()
+        if len(aligner) != 1:
+            raise IOError('All replicates must be aligned using the same aligner or not, which must be specified.')
+        else:
+            aligner = aligner[0]
+
+        peak_caller = IPs[IPs.Condition == experiment]['Peak Caller'].unique().tolist()
+        if len(peak_caller) != 1:
+            raise IOError('All replicates peaks must be called or not using the same peak calling strategy.')
+        else:
+            peak_caller = peak_caller[0]
 
         UMI_list = [x.lower() for x in IPs[IPs.Condition == experiment]['UMI'].unique().tolist()]
         if len(set(UMI_list)) > 1:
@@ -64,40 +75,44 @@ def encode3(exp):
         json_file = {'chip.pipeline_type': chip_type,
                      'chip.paired_end': seq_type,
                      'chip.genome_tsv': exp.genome_indicies['encode_tsv'][genome[0]],
-                     'chip.bwa.mem_mb': 30000,
-                     'chip.macs2_mem_mb': 30000,
-                     'chip.peak_caller': 'macs2',
+                     'chip.align_mem_mb': 30000,
                      "chip.true_rep_only": False,
                      "chip.dup_marker": "picard",
                      "chip.mapq_thresh": 30,
-                     "chip.regex_filter_reads": "chrM",
+                     "chip.filter_chrs": ["chrM"],
                      "chip.subsample_reads": 0,
                      "chip.ctl_subsample_reads": 0,
                      "chip.xcor_subsample_reads": 15000000,
-                     "chip.keep_irregular_chr_in_bfilt_peak": False,
                      "chip.always_use_pooled_ctl": False,
                      "chip.ctl_depth_ratio": 1.2,
-                     "chip.macs2_cap_num_peak": 500000,
+                     "chip.cap_num_peak_macs2": 500000,
                      "chip.pval_thresh": 0.01,
                      "chip.idr_thresh": 0.05,
-                     "chip.bwa_cpu": 4,
-                     "chip.bwa_mem_mb": 20000,
-                     "chip.bwa_time_hr": 48,
+                     "chip.align_cpu": 4,
+                     "chip.align_time_hr": 48,
                      "chip.filter_cpu": 2,
                      "chip.filter_mem_mb": 20000,
                      "chip.filter_time_hr": 24,
                      "chip.bam2ta_cpu": 2,
                      "chip.bam2ta_mem_mb": 10000,
                      "chip.bam2ta_time_hr": 6,
-                     "chip.fingerprint_cpu": 2,
-                     "chip.fingerprint_mem_mb": 12000,
-                     "chip.fingerprint_time_hr": 6,
+                     "chip.jsd_cpu": 2,
+                     "chip.jsd_mem_mb": 12000,
+                     "chip.jsd_time_hr": 6,
                      "chip.xcor_cpu": 2,
                      "chip.xcor_mem_mb": 16000,
                      "chip.xcor_time_hr": 24,
-                     "chip.macs2_time_hr": 24,
-                     "chip.spr_mem_mb": 16000
+                     "chip.align_time_hr": 24,
+                     "chip.spr_mem_mb": 16000,
+                     "chip.enable_count_signal_track": True,
                      }
+
+        if peak_caller == 'macs2':
+            json_file['chip.peak_caller'] = 'macs2'
+
+        if aligner != 'none':
+            json_file['chip.aligner'] = aligner
+
         bams = []
         ctl_bams = []
 
@@ -120,7 +135,7 @@ def encode3(exp):
             json_file[f'chip.ctl_bams'] = ctl_bams
 
         json_file['chip.align_only'] = True if UMI & (file_type == 'fastq') else False
-        json_file['chip.align_only'] = True if final_stage == 'align' else json_file['chip.align_only']
+        json_file['chip.align_only'] = True if peak_caller == 'none' else json_file['chip.align_only']
 
         json_file['chip.no_dup_removal'] = True if UMI else False
         json_file['chip.title'] = f'{experiment}_postUMI_dedup' if UMI & (file_type == 'bam') else experiment
